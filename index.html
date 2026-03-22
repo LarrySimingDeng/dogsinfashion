@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dogs in Fashion — Mobile Grooming in Davis, Sacramento & Beyond</title>
+<meta name="description" content="Dogs in Fashion — Professional mobile dog grooming serving Davis, Sacramento, Woodland, El Macero, Mace Ranch and surrounding areas. Stress-free one-on-one grooming at your door.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
 <style>
@@ -144,26 +145,33 @@ nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.06); }
   display: flex; align-items: center; justify-content: center;
   position: relative;
 }
-.hero-card {
-  background: var(--white);
+.hero-img-card {
   border-radius: 28px;
-  padding: 36px;
-  box-shadow: var(--shadow-lg);
-  text-align: center;
-  width: 380px;
-  position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  max-width: 440px;
+  width: 100%;
 }
-.hero-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:6px;
-  background: linear-gradient(90deg, var(--sky-deep), var(--butter), var(--peach));
+.hero-img-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
 }
-.hero-emoji { font-size: 5rem; margin-bottom: 12px; display: block; }
-.hero-card h3 {
+.hero-img-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 28px;
+  background: linear-gradient(to top, rgba(59,59,59,0.7), transparent);
+  color: var(--white);
+}
+.hero-img-overlay h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.4rem; margin-bottom: 8px;
+  font-size: 1.4rem; margin-bottom: 4px;
 }
-.hero-card p { font-size: 0.9rem; color: var(--text-light); }
+.hero-img-overlay p {
+  font-size: 0.88rem; opacity: 0.9; margin: 0;
+}
 .float-badge {
   position: absolute;
   background: var(--white); border-radius: 16px; padding: 12px 18px;
@@ -203,14 +211,17 @@ section { padding: 90px 24px; }
   display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: center;
 }
 .about-photo {
-  width: 100%; aspect-ratio: 4/5;
-  background: linear-gradient(145deg, var(--sky), var(--butter));
-  border-radius: 24px; display: flex; align-items: center; justify-content: center;
-  font-size: 7rem; position: relative; overflow: hidden;
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  position: relative;
 }
-.about-photo::after {
-  content:''; position:absolute; inset:0;
-  background: linear-gradient(to bottom, transparent 60%, rgba(255,248,231,0.3));
+.about-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
 }
 .about-info h3 {
   font-family: 'Playfair Display', serif;
@@ -391,6 +402,16 @@ section { padding: 90px 24px; }
   transition: all 0.25s;
 }
 .btn-text-doris:hover { background: var(--sage-deep); }
+.btn-email-doris {
+  background: var(--blush); color: var(--text);
+  padding: 14px 28px; border-radius: 50px;
+  font-weight: 700; font-size: 0.95rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: 'Quicksand', sans-serif;
+  transition: all 0.25s;
+}
+.btn-email-doris:hover { background: #f0cdd3; }
 
 .contact-reminder {
   margin-top: 24px; padding: 16px 20px;
@@ -461,10 +482,10 @@ footer {
   .hero-btns { justify-content: center; }
   .hero-badges { justify-content: center; }
   .hero-visual { margin-top: 24px; }
-  .hero-card { width: 100%; max-width: 340px; }
+  .hero-img-card { max-width: 340px; margin: auto; }
   .float-badge { display: none; }
   .about-grid { grid-template-columns: 1fr; }
-  .about-photo { max-width: 320px; margin: auto; aspect-ratio: 1; }
+  .about-photo { max-width: 360px; margin: auto; }
   .services-grid { grid-template-columns: 1fr; max-width: 400px; }
   .steps-grid { grid-template-columns: 1fr 1fr; }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
@@ -515,18 +536,13 @@ footer {
         <a href="sms:+16504368879" class="btn btn-secondary">💬 Text Doris</a>
       </div>
     </div>
-      </div>
-<div class="hero-visual fade-up" style="animation-delay:0.2s">
-  <div class="hero-card">
-    <img src="happydogs.png" alt="Happy dogs" class="hero-image">
-    <h3>Dogs in Fashion</h3>
-    <p>Mobile grooming that comes to your driveway. Gentle, professional, and tailored to your pet.</p>
-      </div>
-      <div class="float-badge top-right">⭐ 5-Star Service</div>
-      <div class="float-badge bottom-left">🧴 Premium Products</div>
-    </div>
-  </div>
-</section>
+    <div class="hero-visual fade-up" style="animation-delay:0.2s">
+      <div class="hero-img-card">
+        <img src="happydogs.png" alt="Happy dogs groomed by Dogs in Fashion" />
+        <div class="hero-img-overlay">
+          <h3>Dogs in Fashion</h3>
+          <p>Mobile grooming — gentle, professional, and at your doorstep.</p>
+        </div>
       </div>
       <div class="float-badge top-right">⭐ 5-Star Service</div>
       <div class="float-badge bottom-left">🧴 Premium Products</div>
@@ -537,7 +553,9 @@ footer {
 <!-- ABOUT -->
 <section id="about">
   <div class="about-grid fade-up">
-    <div class="about-photo">IMG_0908.JPG</div>
+    <div class="about-photo">
+      <img src="IMG_0908.JPG" alt="Doris — Owner & Lead Groomer at Dogs in Fashion" />
+    </div>
     <div class="about-info">
       <div class="section-label">Meet Your Groomer</div>
       <h3>Hi, I'm Doris!</h3>
@@ -736,6 +754,9 @@ footer {
         <a id="textDorisBtn" href="sms:+16504368879" class="btn-text-doris">
           💬 Text Doris to Confirm
         </a>
+        <a id="emailDorisBtn" href="mailto:dorisliu0905@gmail.com" class="btn-email-doris">
+          ✉️ Email Doris Instead
+        </a>
       </div>
 
       <div class="contact-reminder">
@@ -825,12 +846,11 @@ function updateSummary() {
     const d = new Date(date + 'T' + time);
     const dateStr = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
     const timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-    summary.innerHTML = `<strong>${c.name}</strong> · ${c.hours} hours · ${c.price}<br>${dateStr} at ${timeStr}`;
+    summary.innerHTML = '<strong>' + c.name + '</strong> · ' + c.hours + ' hours · ' + c.price + '<br>' + dateStr + ' at ' + timeStr;
     summary.style.display = 'block';
   } else {
     summary.style.display = 'none';
   }
-  // Update SMS body
   updateTextLink();
 }
 
@@ -838,8 +858,9 @@ document.getElementById('serviceSelect').addEventListener('change', updateSummar
 document.getElementById('apptDate').addEventListener('change', updateSummary);
 document.getElementById('apptTime').addEventListener('change', updateSummary);
 
-function updateTextLink() {
+function buildMessageBody() {
   const name = document.getElementById('clientName').value || '';
+  const phone = document.getElementById('clientPhone').value || '';
   const dog = document.getElementById('dogName').value || '';
   const breed = document.getElementById('dogBreed').value || '';
   const svc = document.getElementById('serviceSelect').value;
@@ -848,24 +869,35 @@ function updateTextLink() {
   const addr = document.getElementById('clientAddress').value || '';
   const notes = document.getElementById('notes').value || '';
 
-  let body = `Hi Doris! I'd like to book a grooming appointment with Dogs in Fashion.\n`;
-  if (name) body += `Name: ${name}\n`;
-  if (dog) body += `Dog: ${dog}`;
-  if (breed) body += ` (${breed})`;
-  if (dog) body += `\n`;
-  if (svc) body += `Service: ${serviceConfig[svc].name} (${serviceConfig[svc].hours} hrs, ${serviceConfig[svc].price})\n`;
+  let body = 'Hi Doris! I\'d like to book a grooming appointment with Dogs in Fashion.\n';
+  if (name) body += 'Name: ' + name + '\n';
+  if (phone) body += 'Phone: ' + phone + '\n';
+  if (dog) body += 'Dog: ' + dog;
+  if (breed) body += ' (' + breed + ')';
+  if (dog) body += '\n';
+  if (svc) body += 'Service: ' + serviceConfig[svc].name + ' (' + serviceConfig[svc].hours + ' hrs, ' + serviceConfig[svc].price + ')\n';
   if (date && time) {
     const d = new Date(date + 'T' + time);
-    body += `Preferred: ${d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} at ${d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}\n`;
+    body += 'Preferred: ' + d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' at ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '\n';
   }
-  if (addr) body += `Address: ${addr}\n`;
-  if (notes) body += `Notes: ${notes}\n`;
-  body += `Thank you!`;
-
-  document.getElementById('textDorisBtn').href = `sms:+16504368879?body=${encodeURIComponent(body)}`;
+  if (addr) body += 'Address: ' + addr + '\n';
+  if (notes) body += 'Notes: ' + notes + '\n';
+  body += 'Thank you!';
+  return body;
 }
 
-// Update text link on any input change
+function updateTextLink() {
+  const body = buildMessageBody();
+  document.getElementById('textDorisBtn').href = 'sms:+16504368879?body=' + encodeURIComponent(body);
+
+  // Also update the email link
+  const svc = document.getElementById('serviceSelect').value;
+  const dog = document.getElementById('dogName').value || 'my dog';
+  const subject = svc ? 'Grooming Appointment – ' + dog + ' – ' + serviceConfig[svc].name : 'Grooming Appointment Request';
+  document.getElementById('emailDorisBtn').href = 'mailto:dorisliu0905@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+// Update text & email links on any input change
 document.querySelectorAll('#bookingForm input, #bookingForm select, #bookingForm textarea').forEach(el => {
   el.addEventListener('input', updateTextLink);
   el.addEventListener('change', updateTextLink);
@@ -875,6 +907,7 @@ function addToGoogleCalendar() {
   const name = document.getElementById('clientName').value;
   const dog = document.getElementById('dogName').value;
   const breed = document.getElementById('dogBreed').value;
+  const phone = document.getElementById('clientPhone').value;
   const svc = document.getElementById('serviceSelect').value;
   const date = document.getElementById('apptDate').value;
   const time = document.getElementById('apptTime').value;
@@ -895,30 +928,30 @@ function addToGoogleCalendar() {
     return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
   }
 
-  const title = encodeURIComponent(`🐾 Dogs in Fashion: ${c.name} — ${dog}`);
+  const title = encodeURIComponent('🐾 Dogs in Fashion: ' + c.name + ' — ' + dog);
   const details = encodeURIComponent(
-    `Dogs in Fashion Mobile Grooming\n\n` +
-    `Client: ${name}\n` +
-    `Dog: ${dog}${breed ? ' (' + breed + ')' : ''}\n` +
-    `Service: ${c.name}\n` +
-    `Duration: ${c.hours} hours\n` +
-    `Price: ${c.price}\n` +
-    (notes ? `Notes: ${notes}\n` : '') +
-    `\nGroomer: Doris — (650) 436-8879\nEmail: dorisliu0905@gmail.com`
+    'Dogs in Fashion Mobile Grooming\n\n' +
+    'Client: ' + name + '\n' +
+    'Phone: ' + (phone || 'N/A') + '\n' +
+    'Dog: ' + dog + (breed ? ' (' + breed + ')' : '') + '\n' +
+    'Service: ' + c.name + '\n' +
+    'Duration: ' + c.hours + ' hours\n' +
+    'Price: ' + c.price + '\n' +
+    (notes ? 'Notes: ' + notes + '\n' : '') +
+    '\nGroomer: Doris — (650) 436-8879\n' +
+    'Email: dorisliu0905@gmail.com\n' +
+    'Web: www.dogsinfashion.com'
   );
-  const location = encodeURIComponent(addr || 'Client Address');
-  const guests = encodeURIComponent('dorisliu0905@gmail.com');
+  const location = encodeURIComponent(addr || 'Mobile service — client address');
 
-  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-    `&text=${title}` +
-    `&dates=${gcalDate(start)}/${gcalDate(end)}` +
-    `&details=${details}` +
-    `&location=${location}` +
-    `&add=${guests}`;
+  const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + title
+    + '&dates=' + gcalDate(start) + '/' + gcalDate(end)
+    + '&details=' + details
+    + '&location=' + location;
 
   window.open(url, '_blank');
 }
 </script>
-
 </body>
 </html>
