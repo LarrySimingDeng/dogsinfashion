@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dogs in Fashion — Mobile Grooming in Davis, Sacramento & Beyond</title>
+<meta name="description" content="Dogs in Fashion — Professional mobile dog grooming serving Davis, Sacramento, Woodland, El Macero, Mace Ranch and surrounding areas. Stress-free one-on-one grooming at your door.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --sky: #D6ECFA;
+  --sky-deep: #A8D4F0;
+  --cream: #FFF8E7;
+  --butter: #FDE9A6;
+  --peach: #FDDCBD;
+  --blush: #F7E1E5;
+  --sage: #D5E5D0;
+  --sage-deep: #B0CDA7;
+  --text: #3B3B3B;
+  --text-light: #6B6B6B;
+  --white: #FFFFFF;
+  --accent: #5BA4D9;
+  --accent-warm: #E8985E;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  color: var(--text);
+  background: var(--cream);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ===== NAV ===== */
+nav {
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  background: rgba(255,248,231,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(168,212,240,0.3);
+  transition: box-shadow 0.3s;
+}
+nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.06); }
+.nav-inner {
+  max-width: 1100px; margin: auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-paw { font-size: 1.6rem; }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a {
+  text-decoration: none; color: var(--text);
+  font-weight: 600; font-size: 0.92rem;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--accent); }
+.nav-cta {
+  background: var(--accent) !important; color: var(--white) !important;
+  padding: 10px 22px; border-radius: 50px;
+  font-weight: 700 !important; font-size: 0.88rem !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+}
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,164,217,0.35); }
+.hamburger { display:none; background:none; border:none; cursor:pointer; padding:4px; }
+.hamburger span { display:block; width:24px; height:2.5px; background:var(--text); margin:5px 0; border-radius:2px; transition:0.3s; }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 120px 24px 80px;
+  background: linear-gradient(160deg, var(--sky) 0%, var(--cream) 40%, var(--butter) 100%);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-120px; right:-120px;
+  width:450px; height:450px; border-radius:50%;
+  background: radial-gradient(circle, rgba(253,220,189,0.5), transparent 70%);
+}
+.hero::after {
+  content:''; position:absolute; bottom:-80px; left:-80px;
+  width:350px; height:350px; border-radius:50%;
+  background: radial-gradient(circle, rgba(214,236,250,0.6), transparent 70%);
+}
+.hero-content {
+  max-width: 1100px; margin: auto; position: relative; z-index:2;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.hero-text h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.4rem; font-weight: 700;
+  line-height: 1.15; margin-bottom: 18px;
+  color: var(--text);
+}
+.hero-text h1 em { font-style: italic; color: var(--accent); }
+.hero-text p {
+  font-size: 1.12rem; color: var(--text-light);
+  margin-bottom: 32px; max-width: 460px;
+}
+.hero-badges { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+.badge {
+  background: var(--white); padding: 6px 16px;
+  border-radius: 50px; font-size: 0.82rem; font-weight: 600;
+  color: var(--accent); border: 1.5px solid var(--sky-deep);
+}
+.hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 30px; border-radius: 50px; font-weight: 700;
+  font-size: 0.95rem; text-decoration: none; cursor: pointer;
+  border: none; transition: all 0.25s;
+  font-family: 'Quicksand', sans-serif;
+}
+.btn-primary {
+  background: var(--accent); color: var(--white);
+  box-shadow: 0 4px 20px rgba(91,164,217,0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(91,164,217,0.4); }
+.btn-secondary {
+  background: var(--white); color: var(--accent);
+  border: 2px solid var(--sky-deep);
+}
+.btn-secondary:hover { background: var(--sky); }
+
+/* Hero image — constrained on desktop */
+.hero-visual {
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.hero-img-card {
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 480px;
+}
+.hero-img-card img {
+  width: 100%;
+  height: 480px;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+.hero-img-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 28px;
+  background: linear-gradient(to top, rgba(59,59,59,0.7), transparent);
+  color: var(--white);
+}
+.hero-img-overlay h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; margin-bottom: 4px;
+}
+.hero-img-overlay p { font-size: 0.88rem; opacity: 0.9; margin: 0; }
+.float-badge {
+  position: absolute;
+  background: var(--white); border-radius: 16px; padding: 12px 18px;
+  box-shadow: var(--shadow); font-weight: 600; font-size: 0.85rem;
+  display: flex; align-items: center; gap: 8px;
+  animation: float 4s ease-in-out infinite;
+}
+.float-badge.top-right { top: -10px; right: -20px; animation-delay: 0.5s; }
+.float-badge.bottom-left { bottom: -10px; left: -20px; animation-delay: 1.5s; }
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ===== SECTIONS ===== */
+section { padding: 90px 24px; }
+.section-label {
+  font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--accent); margin-bottom: 10px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem; font-weight: 700; margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 1.05rem; color: var(--text-light);
+  max-width: 560px; margin-bottom: 48px;
+}
+.center-text { text-align: center; }
+.center-text .section-sub { margin-left: auto; margin-right: auto; }
+
+/* ===== ABOUT ===== */
+#about { background: var(--white); }
+.about-grid {
+  max-width: 1000px; margin: auto;
+  display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: center;
+}
+.about-photo {
+  width: 100%; max-width: 400px;
+  border-radius: 24px; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(145deg, var(--sky), var(--butter));
+}
+.about-photo img {
+  width: 100%; height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+}
+.about-info h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; margin-bottom: 8px;
+}
+.about-info .role {
+  color: var(--accent); font-weight: 600;
+  font-size: 1rem; margin-bottom: 20px;
+}
+.about-info p { color: var(--text-light); margin-bottom: 16px; font-size: 0.98rem; }
+.about-contact {
+  margin-top: 24px; display: flex; flex-direction: column; gap: 12px;
+}
+.about-contact a {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text);
+  font-weight: 600; font-size: 0.95rem;
+  padding: 10px 18px; background: var(--sky);
+  border-radius: var(--radius-sm); transition: background 0.2s;
+}
+.about-contact a:hover { background: var(--sky-deep); }
+
+/* ===== SERVICES — 4-card grid ===== */
+#services {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--sky) 100%);
+}
+.services-grid {
+  max-width: 1120px; margin: auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+}
+.service-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 32px 22px;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s, box-shadow 0.25s;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.service-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.service-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:5px;
+}
+.service-card:nth-child(1)::before { background: var(--sky-deep); }
+.service-card:nth-child(2)::before { background: var(--butter); }
+.service-card:nth-child(3)::before { background: var(--peach); }
+.service-card:nth-child(4)::before { background: var(--sage-deep); }
+.service-icon { font-size: 2.6rem; margin-bottom: 14px; }
+.service-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem; margin-bottom: 6px;
+}
+.service-duration {
+  font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-bottom: 12px;
+}
+.service-weight {
+  display: inline-block;
+  background: var(--cream); padding: 4px 12px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 600; color: var(--text-light);
+  margin-bottom: 12px;
+}
+.service-card p {
+  font-size: 0.85rem; color: var(--text-light);
+  flex: 1; margin-bottom: 18px;
+}
+.service-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 700; color: var(--accent);
+  margin-bottom: 16px;
+}
+.service-includes { list-style: none; margin-bottom: 20px; }
+.service-includes li {
+  font-size: 0.8rem; color: var(--text-light);
+  padding: 3px 0 3px 20px; position: relative;
+}
+.service-includes li::before {
+  content: '✓'; position: absolute; left: 0;
+  color: var(--sage-deep); font-weight: 700;
+}
+.service-card .btn {
+  width: 100%; justify-content: center;
+  font-size: 0.82rem; padding: 11px;
+}
+
+/* ===== AREAS ===== */
+#areas { background: var(--white); }
+.areas-wrap { max-width: 800px; margin: auto; }
+.areas-map {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  justify-content: center; margin-bottom: 32px;
+}
+.area-tag {
+  background: var(--sky); padding: 10px 22px; border-radius: 50px;
+  font-weight: 600; font-size: 0.92rem; color: var(--accent);
+  transition: background 0.2s, transform 0.2s;
+}
+.area-tag:hover { background: var(--sky-deep); transform: scale(1.04); }
+.areas-note {
+  text-align: center; color: var(--text-light); font-size: 0.92rem; margin-top: 24px;
+}
+
+/* ===== BOOKING ===== */
+#booking { background: linear-gradient(180deg, var(--cream), var(--butter) 100%); }
+.booking-wrap {
+  max-width: 720px; margin: auto; background: var(--white);
+  border-radius: 24px; padding: 48px 40px; box-shadow: var(--shadow-lg);
+}
+.booking-wrap h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; margin-bottom: 8px;
+}
+.booking-wrap > p { color: var(--text-light); margin-bottom: 32px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 12px 16px;
+  border: 2px solid var(--sky); border-radius: var(--radius-sm);
+  font-family: 'Quicksand', sans-serif; font-size: 0.95rem;
+  color: var(--text); background: var(--cream);
+  transition: border-color 0.2s; outline: none;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--accent);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.selected-summary {
+  background: var(--sky); border-radius: var(--radius-sm);
+  padding: 16px 20px; margin: 20px 0; font-size: 0.9rem;
+}
+.selected-summary strong { color: var(--accent); }
+.booking-actions {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 28px;
+}
+.btn-gcal {
+  background: var(--accent); color: var(--white);
+  padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: 'Quicksand', sans-serif; transition: all 0.25s;
+}
+.btn-gcal:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(91,164,217,0.35); }
+.btn-text-doris {
+  background: var(--sage); color: var(--text);
+  padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: 'Quicksand', sans-serif; transition: all 0.25s;
+}
+.btn-text-doris:hover { background: var(--sage-deep); }
+.btn-email-doris {
+  background: var(--blush); color: var(--text);
+  padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: 'Quicksand', sans-serif; transition: all 0.25s;
+}
+.btn-email-doris:hover { background: #f0cdd3; }
+.contact-reminder {
+  margin-top: 24px; padding: 16px 20px; background: var(--blush);
+  border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--text); text-align: center;
+}
+.contact-reminder a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+/* ===== HOW IT WORKS ===== */
+#how { background: var(--sky); }
+.steps-grid {
+  max-width: 900px; margin: auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+}
+.step-card { text-align: center; padding: 24px 16px; }
+.step-num {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--accent); color: var(--white);
+  font-weight: 700; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.step-card h4 { font-size: 1rem; margin-bottom: 6px; }
+.step-card p { font-size: 0.85rem; color: var(--text-light); }
+
+/* ===== FOOTER ===== */
+footer {
+  background: var(--text); color: rgba(255,255,255,0.7);
+  padding: 50px 24px 30px;
+}
+.footer-inner {
+  max-width: 1000px; margin: auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px;
+}
+.footer-brand .logo { color: var(--sky-deep); margin-bottom: 12px; }
+.footer-brand p { font-size: 0.88rem; line-height: 1.7; }
+.footer-col h4 { color: var(--white); font-size: 0.9rem; margin-bottom: 14px; }
+.footer-col a {
+  display: block; color: rgba(255,255,255,0.6);
+  text-decoration: none; font-size: 0.88rem;
+  padding: 4px 0; transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--white); }
+.footer-bottom {
+  max-width: 1000px; margin: 40px auto 0;
+  padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);
+  text-align: center; font-size: 0.82rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .services-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; }
+}
+@media (max-width: 768px) {
+  .nav-links { display:none; }
+  .hamburger { display:block; }
+  .nav-links.open {
+    display: flex; flex-direction: column;
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--cream); padding: 20px 24px;
+    border-bottom: 1px solid var(--sky);
+  }
+  .hero-content { grid-template-columns: 1fr; text-align: center; }
+  .hero-text h1 { font-size: 2.4rem; }
+  .hero-text p { margin-left: auto; margin-right: auto; }
+  .hero-btns { justify-content: center; }
+  .hero-badges { justify-content: center; }
+  .hero-visual { margin-top: 24px; }
+  .hero-img-card { max-width: 340px; margin: auto; max-height: none; }
+  .hero-img-card img { height: auto; max-height: none; }
+  .float-badge { display: none; }
+  .about-grid { grid-template-columns: 1fr; }
+  .about-photo { max-width: 320px; margin: auto; }
+  .services-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .steps-grid { grid-template-columns: 1fr 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .booking-wrap { padding: 32px 24px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* ===== ANIMATIONS ===== */
+.fade-up {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo"><span class="logo-paw">🐾</span> Dogs in Fashion</a>
+    <div class="nav-links" id="navLinks">
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#areas">Areas</a>
+      <a href="#how">How It Works</a>
+      <a href="#booking" class="nav-cta">Book Now</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-text fade-up">
+      <div class="hero-badges">
+        <span class="badge">🚐 We Come to You</span>
+        <span class="badge">🐶 1-on-1 Care</span>
+        <span class="badge">✨ Stress-Free</span>
+      </div>
+ <h1 class="hero-title">
+  Pamper Your Pup<br>
+  <em>in Style</em><br>
+  Right at Your Door
+</h1>
+      <p>Professional mobile grooming in Davis, Sacramento, Woodland & surrounding areas. Your fur baby deserves a spa day — no car ride needed.</p>
+      <div class="hero-btns">
+        <a href="#booking" class="btn btn-primary">📅 Book Appointment</a>
+        <a href="sms:+19162871878" class="btn btn-secondary">💬 Text Doris</a>
+      </div>
+    </div>
+    <div class="hero-visual fade-up" style="animation-delay:0.2s">
+      <div class="hero-img-card">
+        <!--
+          IMAGE FILE: happydogs.png
+          This file must be in the SAME directory as index.html.
+          Using ./ prefix for explicit relative path.
+        -->
+        <img src="./happydogs.png" alt="Happy dogs groomed by Dogs in Fashion">
+        <div class="hero-img-overlay">
+          <h3>Dogs in Fashion</h3>
+          <p>Mobile grooming — gentle, professional, and at your doorstep.</p>
+        </div>
+      </div>
+      <div class="float-badge top-right">⭐ 5-Star Service</div>
+      <div class="float-badge bottom-left">🧴 Premium Products</div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid fade-up">
+    <div class="about-photo">
+      <!--
+        IMAGE FILE: IMG_0908.JPG
+        This file must be in the SAME directory as index.html.
+        IMPORTANT: The filename is case-sensitive on Linux/GitHub Pages.
+        Make sure the actual file in your repo is exactly "IMG_0908.JPG" (all caps extension).
+      -->
+      <img src="./IMG_0908.JPG" alt="Doris — Owner and Lead Groomer at Dogs in Fashion">
+    </div>
+    <div class="about-info">
+      <div class="section-label">Meet Your Groomer</div>
+      <h3>Hi, I'm Doris!</h3>
+      <div class="role">Lead Groomer — Dogs in Fashion</div>
+      <p>I'm a passionate pet lover and experienced groomer graduating from professional grooming academy, serving the Davis and Sacramento area. Every pup gets my undivided, gentle attention in a calm, one-on-one setting right at your home. I treat every dog like my own, because they deserve to look and feel their best.</p>
+      <p>Whether your fur baby needs a refreshing bath or a full-style grooming session, I bring the salon to your doorstep with premium products and lots of love.</p>
+      <div class="about-contact">
+        <a href="tel:+19162871878">📞 (916) 287-1878</a>
+        <a href="sms:+19162871878">💬 Text me to book</a>
+        <a href="mailto:dorisliu0905@gmail.com">✉️ dorisliu0905@gmail.com</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="center-text fade-up">
+    <div class="section-label">Services & Pricing</div>
+    <div class="section-title">Choose Your Pup's Pampering</div>
+    <p class="section-sub">Every session is a full groom: one-on-one, gentle, and tailored to your pet's size and needs.</p>
+  </div>
+  <div class="services-grid">
+
+    <!-- SMALL -->
+    <div class="service-card fade-up">
+      <div class="service-icon">🐩</div>
+      <h3>Full Groom — Small</h3>
+      <span class="service-weight">0 – 25 lbs</span>
+      <div class="service-duration">⏱ 2.5 hours</div>
+      <p>Complete grooming for small pups: bath, haircut, styling, and all the finishing touches with extra gentleness.</p>
+      <div class="service-price">$115</div>
+      <ul class="service-includes">
+        <li>Premium shampoo & conditioner</li>
+        <li>Blow dry & brush out</li>
+        <li>Full-body haircut & styling</li>
+        <li>Face, paw & sanitary trim</li>
+        <li>Ear cleaning & nail trim</li>
+        <li>Teeth brushing</li>
+        <li>Bandana or bow</li>
+      </ul>
+      <a href="#booking" class="btn btn-primary" data-service="groom-small">Book Small Groom</a>
+    </div>
+
+    <!-- MEDIUM -->
+    <div class="service-card fade-up" style="animation-delay:0.1s">
+      <div class="service-icon">🐕</div>
+      <h3>Full Groom — Medium</h3>
+      <span class="service-weight">26 – 50 lbs</span>
+      <div class="service-duration">⏱ 2.5 hours</div>
+      <p>The full spa experience for medium-sized pups. Everything they need to look and feel amazing, from nose to tail.</p>
+      <div class="service-price">$130</div>
+      <ul class="service-includes">
+        <li>Premium shampoo & conditioner</li>
+        <li>Blow dry & brush out</li>
+        <li>Full-body haircut & styling</li>
+        <li>Face, paw & sanitary trim</li>
+        <li>Ear cleaning & nail trim</li>
+        <li>Teeth brushing</li>
+        <li>Bandana or bow</li>
+      </ul>
+      <a href="#booking" class="btn btn-primary" data-service="groom-medium">Book Medium Groom</a>
+    </div>
+
+    <!-- LARGE -->
+    <div class="service-card fade-up" style="animation-delay:0.2s">
+      <div class="service-icon">🦮</div>
+      <h3>Full Groom — Large</h3>
+      <span class="service-weight">51 – 80 lbs</span>
+      <div class="service-duration">⏱ 3.5 hours</div>
+      <p>Extra time and care for bigger pups. Includes de-shedding treatment. No rushing, no stress, just love.</p>
+      <div class="service-price">$150</div>
+      <ul class="service-includes">
+        <li>Premium shampoo & conditioner</li>
+        <li>Blow dry & brush out</li>
+        <li>Full-body haircut & styling</li>
+        <li>De-shedding treatment</li>
+        <li>Ear cleaning & nail trim</li>
+        <li>Teeth brushing</li>
+        <li>Bandana or bow</li>
+      </ul>
+      <a href="#booking" class="btn btn-primary" data-service="groom-large">Book Large Groom</a>
+    </div>
+
+    <!-- EXTRA LARGE -->
+    <div class="service-card fade-up" style="animation-delay:0.3s">
+      <div class="service-icon">🐕‍🦺</div>
+      <h3>Full Groom — XL</h3>
+      <span class="service-weight">81 – 110 lbs</span>
+      <div class="service-duration">⏱ 3.5 hours</div>
+      <p>Our most comprehensive session for the biggest fluffs. All the pampering your gentle giant deserves.</p>
+      <div class="service-price">$180</div>
+      <ul class="service-includes">
+        <li>Premium shampoo & conditioner</li>
+        <li>Blow dry & brush out</li>
+        <li>Full-body haircut & styling</li>
+        <li>De-shedding treatment</li>
+        <li>Ear cleaning & nail trim</li>
+        <li>Teeth brushing</li>
+        <li>Bandana or bow</li>
+      </ul>
+      <a href="#booking" class="btn btn-primary" data-service="groom-xl">Book XL Groom</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- AREAS -->
+<section id="areas">
+  <div class="center-text fade-up">
+    <div class="section-label">Service Areas</div>
+    <div class="section-title">We Come to You!</div>
+    <p class="section-sub">Dogs in Fashion proudly serves the greater Davis and Sacramento area. Not sure if we cover your neighborhood? Just text Doris!</p>
+  </div>
+  <div class="areas-wrap fade-up">
+    <div class="areas-map">
+      <span class="area-tag">🏡 Davis</span>
+      <span class="area-tag">🏙️ Sacramento</span>
+      <span class="area-tag">🌳 Woodland</span>
+      <span class="area-tag">🏘️ El Macero</span>
+      <span class="area-tag">🌾 Mace Ranch</span>
+      <span class="area-tag">🏠 West Sacramento</span>
+      <span class="area-tag">📍 Nearby Areas</span>
+    </div>
+    <p class="areas-note">Don't see your city? <a href="sms:+19162871878" style="color:var(--accent);font-weight:700;text-decoration:none;">Text Doris</a> to ask — we're always expanding!</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="center-text fade-up">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">Easy as 1-2-3-4</div>
+  </div>
+  <div class="steps-grid fade-up">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h4>Pick a Service</h4>
+      <p>Choose from small, medium, large, or XL groom below.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h4>Pick a Date & Time</h4>
+      <p>Select your preferred appointment slot.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h4>Add to Calendar</h4>
+      <p>It gets added to both your and Doris's Google Calendar.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h4>We Show Up!</h4>
+      <p>Doris arrives at your door, ready to pamper your pup.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section id="booking">
+  <div class="booking-wrap fade-up">
+    <div class="center-text">
+      <div class="section-label">Book Your Appointment</div>
+      <h2>Schedule a Grooming Session</h2>
+      <p style="color:var(--text-light);margin-bottom:28px;">Fill in the details below, then add it to Google Calendar so both you and Doris have it on the schedule.</p>
+    </div>
+
+    <form id="bookingForm" onsubmit="return false;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="clientName" placeholder="e.g. Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Your Phone</label>
+          <input type="tel" id="clientPhone" placeholder="e.g. (530) 555-1234">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dog's Name</label>
+          <input type="text" id="dogName" placeholder="e.g. Buddy" required>
+        </div>
+        <div class="form-group">
+          <label>Breed & Weight</label>
+          <input type="text" id="dogBreed" placeholder="e.g. Golden Retriever, 65 lbs">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Service</label>
+        <select id="serviceSelect" required>
+          <option value="">— Choose a service —</option>
+          <option value="groom-small">🐩 Full Groom — Small (0–25 lbs) — $115</option>
+          <option value="groom-medium">🐕 Full Groom — Medium (26–50 lbs) — $130</option>
+          <option value="groom-large">🦮 Full Groom — Large (51–80 lbs) — $150</option>
+          <option value="groom-xl">🐕‍🦺 Full Groom — XL (81–110 lbs) — $180</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Preferred Date</label>
+          <input type="date" id="apptDate" required>
+        </div>
+        <div class="form-group">
+          <label>Preferred Time</label>
+          <input type="time" id="apptTime" value="10:00" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Your Address (where we'll come)</label>
+        <input type="text" id="clientAddress" placeholder="e.g. 123 Oak Lane, Davis, CA 95616">
+      </div>
+
+      <div class="form-group">
+        <label>Special Notes</label>
+        <textarea id="notes" rows="3" placeholder="Any allergies, behavioral notes, or requests..."></textarea>
+      </div>
+
+      <div id="summary" class="selected-summary" style="display:none;"></div>
+
+      <div class="booking-actions">
+        <button type="button" class="btn-gcal" onclick="addToGoogleCalendar()">
+          📅 Add to Google Calendar
+        </button>
+        <a id="textDorisBtn" href="sms:+19162871878" class="btn-text-doris">
+          💬 Text Doris to Confirm
+        </a>
+        <a id="emailDorisBtn" href="mailto:dorisliu0905@gmail.com" class="btn-email-doris">
+          ✉️ Email Doris Instead
+        </a>
+      </div>
+
+      <div class="contact-reminder">
+        Prefer to reach out directly? Call or text <a href="tel:+19162871878">Doris at (916) 287-1878</a> or email <a href="mailto:dorisliu0905@gmail.com">dorisliu0905@gmail.com</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="#" class="logo"><span class="logo-paw">🐾</span> Dogs in Fashion</a>
+      <p style="margin-top:12px;">Professional mobile dog grooming serving Davis, Sacramento, Woodland, and surrounding areas. We bring the salon to your doorstep.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <a href="#about">About Doris</a>
+      <a href="#services">Services & Pricing</a>
+      <a href="#areas">Service Areas</a>
+      <a href="#booking">Book Now</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="tel:+19162871878">📞 (916) 287-1878</a>
+      <a href="sms:+19162871878">💬 Text Doris</a>
+      <a href="mailto:dorisliu0905@gmail.com">✉️ Email</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2026 Dogs in Fashion Mobile Grooming — www.dogsinfashion.com
+  </div>
+</footer>
+
+<script>
+// Nav scroll effect
+var nav = document.getElementById('nav');
+window.addEventListener('scroll', function() {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// Hamburger
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+document.querySelectorAll('.nav-links a').forEach(function(a) {
+  a.addEventListener('click', function() { document.getElementById('navLinks').classList.remove('open'); });
+});
+
+// Scroll reveal
+var faders = document.querySelectorAll('.fade-up');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+faders.forEach(function(f) { observer.observe(f); });
+
+// Service card buttons -> pre-select service in booking form
+document.querySelectorAll('[data-service]').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    var svc = btn.getAttribute('data-service');
+    document.getElementById('serviceSelect').value = svc;
+    document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+    updateSummary();
+  });
+});
+
+// Set min date to today
+var today = new Date().toISOString().split('T')[0];
+document.getElementById('apptDate').setAttribute('min', today);
+
+// Service config — 4 tiers
+var serviceConfig = {
+  'groom-small':  { name: 'Full Groom — Small (0–25 lbs)',   hours: 2.5, price: '$115' },
+  'groom-medium': { name: 'Full Groom — Medium (26–50 lbs)', hours: 2.5, price: '$130' },
+  'groom-large':  { name: 'Full Groom — Large (51–80 lbs)',  hours: 3.5, price: '$150' },
+  'groom-xl':     { name: 'Full Groom — XL (81–110 lbs)',    hours: 3.5, price: '$180' }
+};
+
+function updateSummary() {
+  var svc = document.getElementById('serviceSelect').value;
+  var date = document.getElementById('apptDate').value;
+  var time = document.getElementById('apptTime').value;
+  var summary = document.getElementById('summary');
+  if (svc && date && time) {
+    var c = serviceConfig[svc];
+    var d = new Date(date + 'T' + time);
+    var dateStr = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    var timeStr = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+    summary.innerHTML = '<strong>' + c.name + '</strong> · ' + c.hours + ' hours · ' + c.price + '<br>' + dateStr + ' at ' + timeStr;
+    summary.style.display = 'block';
+  } else {
+    summary.style.display = 'none';
+  }
+  updateTextLink();
+}
+
+document.getElementById('serviceSelect').addEventListener('change', updateSummary);
+document.getElementById('apptDate').addEventListener('change', updateSummary);
+document.getElementById('apptTime').addEventListener('change', updateSummary);
+
+function buildMessageBody() {
+  var name = document.getElementById('clientName').value || '';
+  var phone = document.getElementById('clientPhone').value || '';
+  var dog = document.getElementById('dogName').value || '';
+  var breed = document.getElementById('dogBreed').value || '';
+  var svc = document.getElementById('serviceSelect').value;
+  var date = document.getElementById('apptDate').value;
+  var time = document.getElementById('apptTime').value;
+  var addr = document.getElementById('clientAddress').value || '';
+  var notes = document.getElementById('notes').value || '';
+
+  var body = 'Hi Doris! I\'d like to book a grooming appointment with Dogs in Fashion.\n';
+  if (name) body += 'Name: ' + name + '\n';
+  if (phone) body += 'Phone: ' + phone + '\n';
+  if (dog) body += 'Dog: ' + dog;
+  if (breed) body += ' (' + breed + ')';
+  if (dog) body += '\n';
+  if (svc) body += 'Service: ' + serviceConfig[svc].name + ' (' + serviceConfig[svc].hours + ' hrs, ' + serviceConfig[svc].price + ')\n';
+  if (date && time) {
+    var d = new Date(date + 'T' + time);
+    body += 'Preferred: ' + d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' at ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + '\n';
+  }
+  if (addr) body += 'Address: ' + addr + '\n';
+  if (notes) body += 'Notes: ' + notes + '\n';
+  body += 'Thank you!';
+  return body;
+}
+
+function updateTextLink() {
+  var body = buildMessageBody();
+  document.getElementById('textDorisBtn').href = 'sms:+19162871878?body=' + encodeURIComponent(body);
+
+  var svc = document.getElementById('serviceSelect').value;
+  var dog = document.getElementById('dogName').value || 'my dog';
+  var subject = svc ? 'Grooming Appointment – ' + dog + ' – ' + serviceConfig[svc].name : 'Grooming Appointment Request';
+  document.getElementById('emailDorisBtn').href = 'mailto:dorisliu0905@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+// Update text & email links on any input change
+document.querySelectorAll('#bookingForm input, #bookingForm select, #bookingForm textarea').forEach(function(el) {
+  el.addEventListener('input', updateTextLink);
+  el.addEventListener('change', updateTextLink);
+});
+
+function addToGoogleCalendar() {
+  var name = document.getElementById('clientName').value;
+  var dog = document.getElementById('dogName').value;
+  var breed = document.getElementById('dogBreed').value;
+  var phone = document.getElementById('clientPhone').value;
+  var svc = document.getElementById('serviceSelect').value;
+  var date = document.getElementById('apptDate').value;
+  var time = document.getElementById('apptTime').value;
+  var addr = document.getElementById('clientAddress').value;
+  var notes = document.getElementById('notes').value;
+
+  if (!name || !dog || !svc || !date || !time) {
+    alert('Please fill in your name, dog\'s name, service, date, and time.');
+    return;
+  }
+
+  var c = serviceConfig[svc];
+  var start = new Date(date + 'T' + time);
+  var end = new Date(start.getTime() + c.hours * 60 * 60 * 1000);
+
+  function gcalDate(d) {
+    return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  }
+
+  var title = encodeURIComponent('🐾 Dogs in Fashion: ' + c.name + ' — ' + dog);
+  var details = encodeURIComponent(
+    'Dogs in Fashion Mobile Grooming\n\n' +
+    'Client: ' + name + '\n' +
+    'Phone: ' + (phone || 'N/A') + '\n' +
+    'Dog: ' + dog + (breed ? ' (' + breed + ')' : '') + '\n' +
+    'Service: ' + c.name + '\n' +
+    'Duration: ' + c.hours + ' hours\n' +
+    'Price: ' + c.price + '\n' +
+    (notes ? 'Notes: ' + notes + '\n' : '') +
+    '\nGroomer: Doris — (916) 287-1878\n' +
+    'Email: dorisliu0905@gmail.com\n' +
+    'Web: www.dogsinfashion.com'
+  );
+  var location = encodeURIComponent(addr || 'Mobile service — client address');
+
+  var url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + title
+    + '&dates=' + gcalDate(start) + '/' + gcalDate(end)
+    + '&details=' + details
+    + '&location=' + location;
+
+  window.open(url, '_blank');
+}
+</script>
+</body>
+</html>
