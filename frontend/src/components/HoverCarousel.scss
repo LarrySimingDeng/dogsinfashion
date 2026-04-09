@@ -64,6 +64,9 @@
     position: relative;
     height: 100%;
 
+    // Hide scrollbar on touch devices while allowing swipe
+    &::-webkit-scrollbar{ display: none; }
+
     &::before,
     &::after{
       content: '\2039';

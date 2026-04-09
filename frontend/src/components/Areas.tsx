@@ -43,6 +43,22 @@ function initHoverCarousel(elm: HTMLElement) {
   let animated: ReturnType<typeof setTimeout> | null = null
   let mouseMoveRAF: number | null = null
 
+  // --- Shared: update fade indicators based on scroll position ---
+  function updateIndicators() {
+    const cw = wrap.clientWidth
+    const sw = wrap.scrollWidth
+    const sl = wrap.scrollLeft
+    const prevMore = sl > 0
+    const nextMore = sw - cw - sl > 5
+    elm.setAttribute(
+      'data-at',
+      (prevMore ? 'left ' : ' ') + (nextMore ? 'right' : ''),
+    )
+    elm.style.setProperty('--scrollWidth', (cw / sw) * 100 + '%')
+    elm.style.setProperty('--scrollLleft', (sl / sw) * 100 + '%')
+  }
+
+  // --- Desktop: hover-based scrolling ---
   function onMouseEnter(e: MouseEvent) {
     containerWidth = wrap.clientWidth
     scrollWidth = wrap.scrollWidth
@@ -59,8 +75,7 @@ function initHoverCarousel(elm: HTMLElement) {
       scrollPos = scrollWidth - containerWidth
 
     wrap.scrollLeft = scrollPos
-    elm.style.setProperty('--scrollWidth', (containerWidth / scrollWidth) * 100 + '%')
-    elm.style.setProperty('--scrollLleft', (scrollPos / scrollWidth) * 100 + '%')
+    updateIndicators()
 
     if (animated) clearTimeout(animated)
     animated = setTimeout(() => {
@@ -77,22 +92,34 @@ function initHoverCarousel(elm: HTMLElement) {
     scrollPos = (scrollWidth - containerWidth) * pos
 
     wrap.scrollLeft = scrollPos
-
-    if (scrollPos < scrollWidth - containerWidth)
-      elm.style.setProperty('--scrollLleft', (scrollPos / scrollWidth) * 100 + '%')
-
-    const prevMore = wrap.scrollLeft > 0
-    const nextMore = scrollWidth - containerWidth - wrap.scrollLeft > 5
-
-    elm.setAttribute(
-      'data-at',
-      (prevMore ? 'left ' : ' ') + (nextMore ? 'right' : ''),
-    )
+    updateIndicators()
   }
 
   function onMouseMoveRAF(e: MouseEvent) {
     if (mouseMoveRAF) cancelAnimationFrame(mouseMoveRAF)
     mouseMoveRAF = requestAnimationFrame(() => onMouseMove(e))
+  }
+
+  // --- Mobile: touch swipe scrolling ---
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+  if (isTouchDevice) {
+    wrap.style.overflowX = 'auto'
+    wrap.style.webkitOverflowScrolling = 'touch'
+    // Hide scrollbar on touch devices — let users swipe naturally
+    wrap.style.scrollbarWidth = 'none' // Firefox
+    ;(wrap.style as unknown as Record<string, string>).msOverflowStyle = 'none' // IE
+
+    // Update indicators on scroll
+    let scrollRAF: number | null = null
+    function onScroll() {
+      if (scrollRAF) cancelAnimationFrame(scrollRAF)
+      scrollRAF = requestAnimationFrame(updateIndicators)
+    }
+    wrap.addEventListener('scroll', onScroll, { passive: true })
+
+    // Set initial indicator state
+    requestAnimationFrame(updateIndicators)
   }
 
   elm.addEventListener('mouseenter', onMouseEnter)
