@@ -304,8 +304,8 @@ function ScheduleTab() {
         <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">Weekly Hours</h2>
         <div className="space-y-3">
           {availability.map(row => (
-            <div key={row.id} className="flex flex-wrap items-center gap-3">
-              <label className="flex w-28 items-center gap-2">
+            <div key={row.id} className="flex items-center gap-3">
+              <label className="flex w-28 shrink-0 items-center gap-2">
                 <input
                   type="checkbox"
                   checked={row.is_active}
@@ -316,21 +316,23 @@ function ScheduleTab() {
                   {DAYS[row.day_of_week]}
                 </span>
               </label>
-              <input
-                type="time"
-                value={row.start_time}
-                onChange={e => updateRow(row.id, 'start_time', e.target.value)}
-                disabled={!row.is_active}
-                className={`${inputClass} disabled:opacity-40`}
-              />
-              <span className="text-warm-gray">to</span>
-              <input
-                type="time"
-                value={row.end_time}
-                onChange={e => updateRow(row.id, 'end_time', e.target.value)}
-                disabled={!row.is_active}
-                className={`${inputClass} disabled:opacity-40`}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="time"
+                  value={row.start_time}
+                  onChange={e => updateRow(row.id, 'start_time', e.target.value)}
+                  disabled={!row.is_active}
+                  className={`${inputClass} w-[5.5rem] disabled:opacity-40`}
+                />
+                <span className="text-warm-gray">–</span>
+                <input
+                  type="time"
+                  value={row.end_time}
+                  onChange={e => updateRow(row.id, 'end_time', e.target.value)}
+                  disabled={!row.is_active}
+                  className={`${inputClass} w-[5.5rem] disabled:opacity-40`}
+                />
+              </div>
             </div>
           ))}
         </div>

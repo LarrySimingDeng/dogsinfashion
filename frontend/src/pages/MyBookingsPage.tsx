@@ -52,7 +52,7 @@ export default function MyBookingsPage() {
 
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled')
+  const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled').reverse()
   const past = bookings.filter(b => b.date < today || b.status === 'cancelled')
 
   const statusColors: Record<string, string> = {

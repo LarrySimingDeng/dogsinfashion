@@ -100,8 +100,8 @@ bookingsRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
   let query = supabaseAdmin
     .from('bookings')
     .select('*')
-    .order('date', { ascending: true })
-    .order('start_time', { ascending: true })
+    .order('date', { ascending: false })
+    .order('start_time', { ascending: false })
 
   if (!isAdmin) {
     query = query.eq('user_id', req.user!.id)
