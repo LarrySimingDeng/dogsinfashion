@@ -105,10 +105,8 @@ function initHoverCarousel(elm: HTMLElement) {
 
   if (isTouchDevice) {
     wrap.style.overflowX = 'auto'
-    wrap.style.webkitOverflowScrolling = 'touch'
     // Hide scrollbar on touch devices — let users swipe naturally
     wrap.style.scrollbarWidth = 'none' // Firefox
-    ;(wrap.style as unknown as Record<string, string>).msOverflowStyle = 'none' // IE
 
     // Update indicators on scroll
     let scrollRAF: number | null = null
