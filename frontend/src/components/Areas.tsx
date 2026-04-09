@@ -1,5 +1,10 @@
+import { useEffect, useRef } from 'react'
 import { Home, TreePine, Building2, Wheat, Navigation } from 'lucide-react'
 import { motion } from 'framer-motion'
+import car1 from '../assets/car1.jpg'
+import car2 from '../assets/car2.jpg'
+import equip from '../assets/equip.JPG'
+import './HoverCarousel.scss'
 
 const areas = [
   { icon: Home, label: 'Davis' },
@@ -11,7 +16,102 @@ const areas = [
   { icon: Navigation, label: 'Nearby Areas' },
 ]
 
+const images = [
+  car1,
+  car2,
+  equip,
+  'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=600&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=600&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=600&h=400&fit=crop',
+]
+
+// Hover-Carousel component
+// By Yair Even-Or
+// written in jQuery 2013 -> refactored to vanilla 2020
+// https://github.com/yairEO/hover-carousel
+function initHoverCarousel(elm: HTMLElement) {
+  const wrap = elm.querySelector('ul')!.parentNode as HTMLElement
+
+  let containerWidth = 0
+  let scrollWidth = 0
+  let posFromLeft = 0
+  let padding = 0
+  let pos = 0
+  let scrollPos = 0
+  let animated: ReturnType<typeof setTimeout> | null = null
+  let mouseMoveRAF: number | null = null
+
+  function onMouseEnter(e: MouseEvent) {
+    containerWidth = wrap.clientWidth
+    scrollWidth = wrap.scrollWidth
+    padding = 0.2 * containerWidth
+    posFromLeft = wrap.getBoundingClientRect().left
+    const stripePos = e.pageX - padding - posFromLeft
+    pos = stripePos / (containerWidth - padding * 2)
+    scrollPos = (scrollWidth - containerWidth) * pos
+
+    wrap.style.scrollBehavior = 'smooth'
+
+    if (scrollPos < 0) scrollPos = 0
+    if (scrollPos > scrollWidth - containerWidth)
+      scrollPos = scrollWidth - containerWidth
+
+    wrap.scrollLeft = scrollPos
+    elm.style.setProperty('--scrollWidth', (containerWidth / scrollWidth) * 100 + '%')
+    elm.style.setProperty('--scrollLleft', (scrollPos / scrollWidth) * 100 + '%')
+
+    if (animated) clearTimeout(animated)
+    animated = setTimeout(() => {
+      animated = null
+      wrap.style.scrollBehavior = 'auto'
+    }, 200)
+  }
+
+  function onMouseMove(e: MouseEvent) {
+    if (animated) return
+
+    const stripePos = Math.max(0, e.pageX - padding - posFromLeft)
+    pos = stripePos / (containerWidth - padding * 2)
+    scrollPos = (scrollWidth - containerWidth) * pos
+
+    wrap.scrollLeft = scrollPos
+
+    if (scrollPos < scrollWidth - containerWidth)
+      elm.style.setProperty('--scrollLleft', (scrollPos / scrollWidth) * 100 + '%')
+
+    const prevMore = wrap.scrollLeft > 0
+    const nextMore = scrollWidth - containerWidth - wrap.scrollLeft > 5
+
+    elm.setAttribute(
+      'data-at',
+      (prevMore ? 'left ' : ' ') + (nextMore ? 'right' : ''),
+    )
+  }
+
+  function onMouseMoveRAF(e: MouseEvent) {
+    if (mouseMoveRAF) cancelAnimationFrame(mouseMoveRAF)
+    mouseMoveRAF = requestAnimationFrame(() => onMouseMove(e))
+  }
+
+  elm.addEventListener('mouseenter', onMouseEnter)
+  elm.addEventListener('mousemove', onMouseMoveRAF)
+
+  return () => {
+    elm.removeEventListener('mouseenter', onMouseEnter)
+    elm.removeEventListener('mousemove', onMouseMoveRAF)
+  }
+}
+
 export default function Areas() {
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!carouselRef.current) return
+    return initHoverCarousel(carouselRef.current)
+  }, [])
+
   return (
     <section id="areas" className="bg-white px-6 py-24">
       <div className="mx-auto mb-12 max-w-[560px] text-center">
@@ -26,6 +126,27 @@ export default function Areas() {
           Not sure if we cover your neighborhood? Just text Doris!
         </p>
       </div>
+
+      {/* Hover Carousel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-40px' }}
+        transition={{ duration: 0.5 }}
+        className="mx-auto mb-12 max-w-[900px]"
+      >
+        <div className="carousel" ref={carouselRef}>
+          <div className="wrap">
+            <ul>
+              {images.map((src, i) => (
+                <li key={i}>
+                  <img src={src} alt={`Dogs in Fashion mobile grooming ${i + 1}`} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
