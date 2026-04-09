@@ -25,12 +25,17 @@ export async function syncMissingCalendarEvents(): Promise<void> {
   for (const row of bookings) {
     const booking = row as unknown as Booking
     try {
-      // Get client email from profiles via user_id
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('name')
-        .eq('id', booking.user_id)
+      // Re-check if google_event_id is still null (avoid race with fire-and-forget creation)
+      const { data: fresh } = await supabaseAdmin
+        .from('bookings')
+        .select('google_event_id')
+        .eq('id', booking.id)
         .single()
+
+      if (fresh?.google_event_id) {
+        console.log(`Calendar sync: booking ${booking.id} already has event, skipping`)
+        continue
+      }
 
       // Get client email from auth.users
       const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(booking.user_id)
