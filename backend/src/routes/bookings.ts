@@ -80,9 +80,9 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
 
   // Fire-and-forget: calendar event + notifications (all with .catch to prevent crashes)
   const clientEmail = req.user!.email
-  createCalendarEvent(booking, clientEmail).then(eventId => {
+  createCalendarEvent(booking, clientEmail).then(async eventId => {
     if (eventId) {
-      supabaseAdmin.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id)
+      await supabaseAdmin.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id)
     }
   }).catch(err => console.error('Calendar event failed:', err))
   sendBookingConfirmation(booking, clientEmail).catch(err => console.error('Confirmation email failed:', err))
