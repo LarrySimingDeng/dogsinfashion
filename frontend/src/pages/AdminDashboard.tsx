@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
 import AnalyticsTab from '../components/analytics/AnalyticsTab'
+import DogLoader from '../components/DogLoader'
 
 interface Booking {
   id: string
@@ -96,16 +97,21 @@ export default function AdminDashboard() {
 
 function BookingsTab() {
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [filterLoading, setFilterLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
 
   useEffect(() => {
-    setLoading(true)
+    if (initialLoading) {
+      // first load — handled by initialLoading
+    } else {
+      setFilterLoading(true)
+    }
     const params = statusFilter ? `?status=${statusFilter}` : ''
     apiFetch<Booking[]>(`/api/bookings${params}`)
       .then(setBookings)
       .catch((err) => console.error('Failed to fetch bookings:', err))
-      .finally(() => setLoading(false))
+      .finally(() => { setInitialLoading(false); setFilterLoading(false) })
   }, [statusFilter])
 
   const updateStatus = async (id: string, status: 'completed' | 'cancelled') => {
@@ -133,8 +139,8 @@ function BookingsTab() {
     cancelled: 'bg-red-50 text-red-500',
   }
 
-  if (loading) {
-    return <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" /></div>
+  if (initialLoading) {
+    return <div className="flex justify-center py-12"><DogLoader /></div>
   }
 
   return (
@@ -157,7 +163,9 @@ function BookingsTab() {
         ))}
       </div>
 
-      {bookings.length === 0 ? (
+      {filterLoading ? (
+        <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" /></div>
+      ) : bookings.length === 0 ? (
         <p className="py-8 text-center text-warm-gray">No bookings found.</p>
       ) : (
         <div className="space-y-3">
@@ -286,7 +294,7 @@ function ScheduleTab() {
     'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary'
 
   if (loading) {
-    return <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" /></div>
+    return <div className="flex justify-center py-12"><DogLoader /></div>
   }
 
   return (
@@ -438,7 +446,7 @@ function RemindersTab() {
     'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary w-20'
 
   if (loading) {
-    return <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" /></div>
+    return <div className="flex justify-center py-12"><DogLoader /></div>
   }
 
   return (
