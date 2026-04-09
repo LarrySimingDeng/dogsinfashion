@@ -2,3 +2,26 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Environment files — NEVER commit secrets
+.env
+.env.*
+!.env.example
+frontend/.env.local
+backend/.env
+
+# Vite cache
+.vite
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Build output
+frontend/dist
+backend/dist
