@@ -11,7 +11,13 @@ export const app = express()
 
 // Middleware
 app.use(helmet())
-app.use(cors({ origin: config.FRONTEND_URL, credentials: true }))
+app.use(cors({
+  origin: [
+    config.FRONTEND_URL,
+    'https://dogsinfashion-frontend.vercel.app',
+  ],
+  credentials: true,
+}))
 app.use(express.json())
 
 // Health check
