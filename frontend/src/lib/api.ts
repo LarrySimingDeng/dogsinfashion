@@ -31,7 +31,7 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     // If 401 and we haven't retried yet, force a token refresh and retry once
-    if (res.status === 401 && !options.headers?.['X-Retry']) {
+    if (res.status === 401 && !(options.headers as Record<string, string>)?.['X-Retry']) {
       const { data } = await supabase.auth.refreshSession()
       if (data.session?.access_token) {
         return apiFetch<T>(path, {
