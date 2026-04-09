@@ -37,7 +37,7 @@ interface BlockedDate {
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState<'analytics' | 'bookings' | 'schedule' | 'reminders'>('analytics')
+  const [tab, setTab] = useState<'analytics' | 'bookings' | 'schedule' | 'reminders'>('bookings')
 
   return (
     <div className="min-h-screen bg-background px-6 pb-20 pt-28">
@@ -46,16 +46,6 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="mb-6 flex flex-wrap gap-2">
-          <button
-            onClick={() => setTab('analytics')}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'analytics'
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" /> Analytics
-          </button>
           <button
             onClick={() => setTab('bookings')}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
@@ -85,6 +75,16 @@ export default function AdminDashboard() {
             }`}
           >
             <Bell className="h-4 w-4" /> Reminders
+          </button>
+          <button
+            onClick={() => setTab('analytics')}
+            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
+              tab === 'analytics'
+                ? 'bg-secondary text-white'
+                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" /> Analytics
           </button>
         </div>
 

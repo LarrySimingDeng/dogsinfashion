@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext'
 interface Props {
   children: React.ReactNode
   requireAdmin?: boolean
+  requireClient?: boolean
 }
 
-export default function ProtectedRoute({ children, requireAdmin }: Props) {
+export default function ProtectedRoute({ children, requireAdmin, requireClient }: Props) {
   const { user, profile, isLoading } = useAuth()
   const location = useLocation()
 
@@ -24,6 +25,10 @@ export default function ProtectedRoute({ children, requireAdmin }: Props) {
 
   if (requireAdmin && profile?.role !== 'admin') {
     return <Navigate to="/" replace />
+  }
+
+  if (requireClient && profile?.role === 'admin') {
+    return <Navigate to="/admin" replace />
   }
 
   return <>{children}</>
