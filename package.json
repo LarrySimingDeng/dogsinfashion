@@ -1,15 +1,11 @@
 {
   "name": "dogsinfashion",
   "private": true,
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "scripts": {
-    "dev": "concurrently -n fe,be -c blue,green \"npm run dev -w frontend\" \"npm run dev -w backend\"",
-    "build": "npm run build -w frontend && npm run build -w backend",
-    "dev:fe": "npm run dev -w frontend",
-    "dev:be": "npm run dev -w backend"
+    "dev": "concurrently -n fe,be -c blue,green \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
+    "build": "cd frontend && npm run build && cd ../backend && npm run build",
+    "dev:fe": "cd frontend && npm run dev",
+    "dev:be": "cd backend && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
