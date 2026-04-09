@@ -22,6 +22,10 @@ backend/.env
 # OS
 Thumbs.db
 
+# Lock files (root lock file is sufficient)
+frontend/package-lock.json
+backend/package-lock.json
+
 # Build output
 frontend/dist
 backend/dist
