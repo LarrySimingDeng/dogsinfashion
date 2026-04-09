@@ -1,6 +1,7 @@
 import { Phone, MessageCircle, Mail } from 'lucide-react'
 import { motion } from 'framer-motion'
 import dorisPhoto from '../assets/IMG_0908.JPG'
+import MeshiDog from './MeshiDog'
 
 const contacts = [
   { icon: Phone, label: '(916) 287-1878', href: 'tel:+19162871878' },
@@ -38,9 +39,12 @@ export default function About() {
           <p className="mb-2.5 text-xs font-bold uppercase tracking-[2px] text-secondary">
             Meet Your Groomer
           </p>
-          <h3 className="font-accent text-4xl text-warm-dark">
-            Hi, I'm Doris!
-          </h3>
+          <div className="flex items-center gap-20">
+            <h3 className="font-accent text-4xl text-warm-dark">
+              Hi, I'm Doris!
+            </h3>
+            <MeshiDog />
+          </div>
           <p className="mt-1 mb-5 text-base font-semibold text-secondary">
             Lead Groomer — Dogs in Fashion
           </p>
