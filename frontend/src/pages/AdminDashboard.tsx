@@ -140,7 +140,7 @@ function BookingsTab() {
   }
 
   if (initialLoading) {
-    return <div className="flex justify-center py-12"><DogLoader /></div>
+    return <div className="flex justify-center py-32"><DogLoader /></div>
   }
 
   return (
@@ -294,7 +294,7 @@ function ScheduleTab() {
     'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary'
 
   if (loading) {
-    return <div className="flex justify-center py-12"><DogLoader /></div>
+    return <div className="flex justify-center py-32"><DogLoader /></div>
   }
 
   return (
@@ -446,7 +446,7 @@ function RemindersTab() {
     'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary w-20'
 
   if (loading) {
-    return <div className="flex justify-center py-12"><DogLoader /></div>
+    return <div className="flex justify-center py-32"><DogLoader /></div>
   }
 
   return (
