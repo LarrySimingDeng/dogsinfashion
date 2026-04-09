@@ -540,7 +540,7 @@ footer {
       <div class="about-contact">
         <a href="tel:+19162871878">📞 (916) 287-1878</a>
         <a href="sms:+19162871878">💬 Text me to book</a>
-        <a href="mailto:dorisliu0905@gmail.com">✉️ dorisliu0905@gmail.com</a>
+        <a href="mailto:dogsinfashionca@gmail.com">✉️ dogsinfashionca@gmail.com</a>
       </div>
     </div>
   </div>
@@ -762,13 +762,13 @@ footer {
         <a id="textDorisBtn" href="sms:+19162871878" class="btn-text-doris">
           💬 Text Doris to Confirm
         </a>
-        <a id="emailDorisBtn" href="mailto:dorisliu0905@gmail.com" class="btn-email-doris">
+        <a id="emailDorisBtn" href="mailto:dogsinfashionca@gmail.com" class="btn-email-doris">
           ✉️ Email Doris Instead
         </a>
       </div>
 
       <div class="contact-reminder">
-        Prefer to reach out directly? Call or text <a href="tel:+19162871878">Doris at (916) 287-1878</a> or email <a href="mailto:dorisliu0905@gmail.com">dorisliu0905@gmail.com</a>
+        Prefer to reach out directly? Call or text <a href="tel:+19162871878">Doris at (916) 287-1878</a> or email <a href="mailto:dogsinfashionca@gmail.com">dogsinfashionca@gmail.com</a>
       </div>
     </form>
   </div>
@@ -792,7 +792,7 @@ footer {
       <h4>Contact</h4>
       <a href="tel:+19162871878">📞 (916) 287-1878</a>
       <a href="sms:+19162871878">💬 Text Doris</a>
-      <a href="mailto:dorisliu0905@gmail.com">✉️ Email</a>
+      <a href="mailto:dogsinfashionca@gmail.com">✉️ Email</a>
     </div>
   </div>
   <div class="footer-bottom">
@@ -904,7 +904,7 @@ function updateTextLink() {
   var svc = document.getElementById('serviceSelect').value;
   var dog = document.getElementById('dogName').value || 'my dog';
   var subject = svc ? 'Grooming Appointment – ' + dog + ' – ' + serviceConfig[svc].name : 'Grooming Appointment Request';
-  document.getElementById('emailDorisBtn').href = 'mailto:dorisliu0905@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  document.getElementById('emailDorisBtn').href = 'mailto:dogsinfashionca@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 }
 
 // Update text & email links on any input change
@@ -948,7 +948,7 @@ function addToGoogleCalendar() {
     'Price: ' + c.price + '\n' +
     (notes ? 'Notes: ' + notes + '\n' : '') +
     '\nGroomer: Doris — (916) 287-1878\n' +
-    'Email: dorisliu0905@gmail.com\n' +
+    'Email: dogsinfashionca@gmail.com\n' +
     'Web: www.dogsinfashion.com'
   );
   var location = encodeURIComponent(addr || 'Mobile service — client address');
