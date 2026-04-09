@@ -28,7 +28,7 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     apiFetch<Booking[]>('/api/bookings')
-      .then(setBookings)
+      .then(data => setBookings(data.sort((a, b) => b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time))))
       .catch((err) => {
         console.error('Failed to fetch bookings:', err)
         setError(err.message || 'Failed to load bookings')

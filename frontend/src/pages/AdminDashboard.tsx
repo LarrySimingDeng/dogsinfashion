@@ -109,7 +109,7 @@ function BookingsTab() {
     }
     const params = statusFilter ? `?status=${statusFilter}` : ''
     apiFetch<Booking[]>(`/api/bookings${params}`)
-      .then(setBookings)
+      .then(data => setBookings(data.sort((a, b) => b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time))))
       .catch((err) => console.error('Failed to fetch bookings:', err))
       .finally(() => { setInitialLoading(false); setFilterLoading(false) })
   }, [statusFilter])
@@ -322,7 +322,7 @@ function ScheduleTab() {
                   value={row.start_time}
                   onChange={e => updateRow(row.id, 'start_time', e.target.value)}
                   disabled={!row.is_active}
-                  className={`${inputClass} w-[5.5rem] disabled:opacity-40`}
+                  className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
                 />
                 <span className="text-warm-gray">–</span>
                 <input
@@ -330,7 +330,7 @@ function ScheduleTab() {
                   value={row.end_time}
                   onChange={e => updateRow(row.id, 'end_time', e.target.value)}
                   disabled={!row.is_active}
-                  className={`${inputClass} w-[5.5rem] disabled:opacity-40`}
+                  className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
                 />
               </div>
             </div>
