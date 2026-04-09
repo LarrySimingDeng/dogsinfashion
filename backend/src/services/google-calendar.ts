@@ -23,6 +23,21 @@ function getCalendarClient() {
 
 const calendar = getCalendarClient()
 
+const normTime = (t: string) => t.length === 5 ? `${t}:00` : t
+
+function buildEventDescription(booking: Booking, clientEmail?: string): string {
+  const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
+  return [
+    `Service: ${serviceName}`,
+    `Dog: ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}`,
+    `Address: ${booking.address}`,
+    booking.notes ? `Notes: ${booking.notes}` : '',
+    clientEmail ? `Client: ${clientEmail}` : '',
+    '',
+    'Booked via dogsinfashion.com',
+  ].filter(Boolean).join('\n')
+}
+
 export async function createCalendarEvent(
   booking: Booking,
   clientEmail?: string,
@@ -31,20 +46,9 @@ export async function createCalendarEvent(
 
   try {
     const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
-    // start_time may be "09:00" or "09:00:00" from DB — normalize to HH:MM:SS
-    const normTime = (t: string) => t.length === 5 ? `${t}:00` : t
     const startDateTime = `${booking.date}T${normTime(booking.start_time)}`
     const endDateTime = `${booking.date}T${normTime(booking.end_time)}`
-
-    const description = [
-      `Service: ${serviceName}`,
-      `Dog: ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}`,
-      `Address: ${booking.address}`,
-      booking.notes ? `Notes: ${booking.notes}` : '',
-      clientEmail ? `Client: ${clientEmail}` : '',
-      '',
-      'Booked via dogsinfashion.com',
-    ].filter(Boolean).join('\n')
+    const description = buildEventDescription(booking, clientEmail)
 
     const event = await calendar.events.insert({
       calendarId: config.DORIS_CALENDAR_ID,
@@ -82,6 +86,40 @@ export async function deleteCalendarEvent(eventId: string): Promise<void> {
     })
   } catch (err) {
     console.error('Failed to delete calendar event:', err)
+  }
+}
+
+export async function updateCalendarEvent(
+  eventId: string,
+  booking: Booking,
+  clientEmail?: string,
+): Promise<boolean> {
+  if (!calendar || !eventId) return true
+
+  try {
+    const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
+    const startDateTime = `${booking.date}T${normTime(booking.start_time)}`
+    const endDateTime = `${booking.date}T${normTime(booking.end_time)}`
+    const description = buildEventDescription(booking, clientEmail)
+
+    console.log('[calendar] patching event:', eventId, '| start:', startDateTime, '| end:', endDateTime)
+    await calendar.events.patch({
+      calendarId: config.DORIS_CALENDAR_ID,
+      eventId,
+      sendUpdates: 'all',
+      requestBody: {
+        summary: `Dogs in Fashion: ${serviceName} — ${booking.dog_name}`,
+        description,
+        location: booking.address,
+        start: { dateTime: startDateTime, timeZone: 'America/Los_Angeles' },
+        end: { dateTime: endDateTime, timeZone: 'America/Los_Angeles' },
+      },
+    })
+    console.log('[calendar] patch success for event:', eventId)
+    return true
+  } catch (err) {
+    console.error('[calendar] patch FAILED for event:', eventId, err)
+    return false
   }
 }
 

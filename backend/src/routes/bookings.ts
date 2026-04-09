@@ -4,9 +4,9 @@ import { requireAuth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/admin.js'
 import { supabaseAdmin } from '../services/supabase.js'
 import { getAvailableSlots } from '../services/slots.js'
-import { createCalendarEvent, deleteCalendarEvent } from '../services/google-calendar.js'
-import { sendBookingConfirmation, notifyDorisNewBooking } from '../services/email.js'
-import { notifyDorisSms } from '../services/sms.js'
+import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '../services/google-calendar.js'
+import { sendBookingConfirmation, notifyDorisNewBooking, sendRescheduleNotification, notifyDorisReschedule } from '../services/email.js'
+import { notifyDorisSms, notifyDorisRescheduleSms } from '../services/sms.js'
 import { scheduleReminders, cancelReminders } from '../jobs/reminder-scheduler.js'
 import type { AuthRequest } from '../types.js'
 import { SERVICE_DURATIONS } from '../data/services.js'
@@ -201,4 +201,137 @@ bookingsRouter.patch('/:id/status', requireAuth, async (req: AuthRequest, res) =
   }
 
   res.json(updated)
+})
+
+// Reschedule booking (change date/time)
+bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, res) => {
+  const schema = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    start_time: z.string().regex(/^\d{2}:\d{2}$/),
+  })
+
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() })
+    return
+  }
+
+  // Get existing booking
+  const { data: booking } = await supabaseAdmin
+    .from('bookings')
+    .select('*')
+    .eq('id', req.params.id)
+    .single()
+
+  if (!booking) {
+    res.status(404).json({ error: 'Booking not found' })
+    return
+  }
+
+  // Authorization: owner or admin
+  if (booking.user_id !== req.user!.id && req.user!.role !== 'admin') {
+    res.status(403).json({ error: 'Access denied' })
+    return
+  }
+
+  // Only confirmed bookings can be rescheduled
+  if (booking.status !== 'confirmed') {
+    res.status(400).json({ error: 'Only confirmed bookings can be rescheduled' })
+    return
+  }
+
+  // 24-hour advance notice check
+  const existingStart = new Date(`${booking.date}T${booking.start_time}`)
+  const hoursUntil = (existingStart.getTime() - Date.now()) / (1000 * 60 * 60)
+  if (hoursUntil < 24) {
+    res.status(400).json({ error: 'Cannot reschedule within 24 hours of the appointment' })
+    return
+  }
+
+  const { date, start_time } = parsed.data
+
+  // No-op check
+  if (date === booking.date && start_time === booking.start_time) {
+    res.json(booking)
+    return
+  }
+
+  // Calculate end_time
+  const duration = SERVICE_DURATIONS[booking.service_id]
+  if (!duration) {
+    res.status(400).json({ error: 'Invalid service_id' })
+    return
+  }
+  const end_time = addMinutesToTime(start_time, duration * 60)
+
+  // Verify new slot is available (exclude current booking to avoid self-conflict)
+  const available = await getAvailableSlots(date, booking.service_id, booking.id)
+  const isAvailable = available.some(s => s.start === start_time)
+  if (!isAvailable) {
+    res.status(409).json({ error: 'This time slot is no longer available' })
+    return
+  }
+
+  // Update booking (optimistic lock on status='confirmed')
+  const { data: updated, error } = await supabaseAdmin
+    .from('bookings')
+    .update({
+      date,
+      start_time,
+      end_time,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', booking.id)
+    .eq('status', 'confirmed')
+    .select()
+    .single()
+
+  if (error || !updated) {
+    res.status(500).json({ error: error?.message ?? 'Failed to update booking' })
+    return
+  }
+
+  // Return immediately, side effects are fire-and-forget
+  res.json(updated)
+
+  const oldDate = booking.date
+  const oldStartTime = booking.start_time
+
+  // Get the actual client email (req.user may be admin, not the booking owner)
+  let clientEmail = req.user!.email
+  if (booking.user_id !== req.user!.id) {
+    try {
+      const { data: { user: clientUser } } = await supabaseAdmin.auth.admin.getUserById(booking.user_id)
+      if (clientUser?.email) clientEmail = clientUser.email
+    } catch (err) {
+      console.error('Failed to fetch client email:', err)
+    }
+  }
+
+  // Update Google Calendar event (fallback to create if event not found)
+  const calendarUpdate = async () => {
+    if (booking.google_event_id) {
+      const ok = await updateCalendarEvent(booking.google_event_id, updated, clientEmail)
+      if (ok) return
+    }
+    // Event missing or no event ID — create a new one
+    const newEventId = await createCalendarEvent(updated, clientEmail)
+    if (newEventId) {
+      await supabaseAdmin.from('bookings').update({ google_event_id: newEventId }).eq('id', updated.id)
+    }
+  }
+  calendarUpdate().catch(err => console.error('[reschedule] calendar sync failed:', err))
+
+  // Send reschedule notifications
+  sendRescheduleNotification(updated, clientEmail, oldDate, oldStartTime)
+    .catch(err => console.error('Reschedule notification failed:', err))
+  notifyDorisReschedule(updated, clientEmail, oldDate, oldStartTime)
+    .catch(err => console.error('Doris reschedule email failed:', err))
+  notifyDorisRescheduleSms(updated, oldDate, oldStartTime)
+    .catch(err => console.error('Doris reschedule SMS failed:', err))
+
+  // Reschedule reminders: cancel old ones, schedule new ones
+  cancelReminders(booking.id)
+    .then(() => scheduleReminders(updated, clientEmail))
+    .catch(err => console.error('Reschedule reminders failed:', err))
 })

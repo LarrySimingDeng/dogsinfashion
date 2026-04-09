@@ -13,6 +13,7 @@ availabilityRouter.get('/slots', async (req, res) => {
   const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     serviceId: z.string().min(1),
+    excludeBookingId: z.string().uuid().optional(),
   })
 
   const parsed = schema.safeParse(req.query)
@@ -21,7 +22,7 @@ availabilityRouter.get('/slots', async (req, res) => {
     return
   }
 
-  const slots = await getAvailableSlots(parsed.data.date, parsed.data.serviceId)
+  const slots = await getAvailableSlots(parsed.data.date, parsed.data.serviceId, parsed.data.excludeBookingId)
   res.json({ slots })
 })
 

@@ -36,6 +36,31 @@ export async function notifyDorisSms(booking: Booking): Promise<void> {
   }
 }
 
+export async function notifyDorisRescheduleSms(
+  booking: Booking,
+  oldDate: string,
+  oldStartTime: string,
+): Promise<void> {
+  const client = getClient()
+  if (!client) return
+
+  const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
+  const oldD = new Date(`${oldDate}T00:00:00`)
+  const oldDateStr = oldD.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const newD = new Date(`${booking.date}T00:00:00`)
+  const newDateStr = newD.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+  try {
+    await client.messages.create({
+      body: `Rescheduled: ${booking.dog_name} — ${serviceName} moved from ${oldDateStr} ${formatTime(oldStartTime)} to ${newDateStr} ${formatTime(booking.start_time)}, ${booking.address}`,
+      from: config.TWILIO_PHONE_NUMBER,
+      to: config.DORIS_PHONE,
+    })
+  } catch (err) {
+    console.error('Failed to send reschedule SMS to Doris:', err)
+  }
+}
+
 export async function sendSmsReminder(phone: string, message: string): Promise<void> {
   const client = getClient()
   if (!client) return

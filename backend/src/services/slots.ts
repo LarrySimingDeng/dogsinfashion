@@ -16,7 +16,7 @@ function minutesToTime(mins: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-export async function getAvailableSlots(date: string, serviceId: string): Promise<TimeSlot[]> {
+export async function getAvailableSlots(date: string, serviceId: string, excludeBookingId?: string): Promise<TimeSlot[]> {
   const duration = SERVICE_DURATIONS[serviceId]
   if (!duration) return []
 
@@ -42,12 +42,18 @@ export async function getAvailableSlots(date: string, serviceId: string): Promis
 
   if (!availability || availability.length === 0) return []
 
-  // Get existing bookings for this date
-  const { data: bookings } = await supabaseAdmin
+  // Get existing bookings for this date (exclude current booking when rescheduling)
+  let bookingsQuery = supabaseAdmin
     .from('bookings')
     .select('start_time, end_time')
     .eq('date', date)
     .neq('status', 'cancelled')
+
+  if (excludeBookingId) {
+    bookingsQuery = bookingsQuery.neq('id', excludeBookingId)
+  }
+
+  const { data: bookings } = await bookingsQuery
 
   // Merge DB bookings + Google Calendar busy times
   const calendarBusy = await getCalendarBusySlots(date)

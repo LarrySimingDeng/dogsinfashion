@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Dog, Plus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Dog, Plus, RefreshCw } from 'lucide-react'
 import DogLoader from '../components/DogLoader'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
+import RescheduleModal from '../components/RescheduleModal'
 
 interface Booking {
   id: string
@@ -25,6 +26,7 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
 
   useEffect(() => {
     apiFetch<Booking[]>('/api/bookings')
@@ -68,7 +70,7 @@ export default function MyBookingsPage() {
     return `${dh}:${String(m!).padStart(2, '0')} ${ampm}`
   }
 
-  const BookingCard = ({ booking }: { booking: Booking }) => {
+  const BookingCard = ({ booking, showReschedule }: { booking: Booking; showReschedule?: boolean }) => {
     const service = getServiceById(booking.service_id)
     return (
       <motion.div
@@ -110,6 +112,16 @@ export default function MyBookingsPage() {
             {booking.address}
           </div>
         </div>
+
+        {showReschedule && (
+          <button
+            onClick={() => setRescheduleBooking(booking)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-4 py-1.5 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/20"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reschedule
+          </button>
+        )}
 
       </motion.div>
     )
@@ -167,7 +179,7 @@ export default function MyBookingsPage() {
                   Upcoming
                 </h2>
                 <div className="space-y-4">
-                  {upcoming.map(b => <BookingCard key={b.id} booking={b} />)}
+                  {upcoming.map(b => <BookingCard key={b.id} booking={b} showReschedule={b.status === 'confirmed'} />)}
                 </div>
               </div>
             )}
@@ -185,6 +197,17 @@ export default function MyBookingsPage() {
           </>
         )}
       </div>
+
+      {rescheduleBooking && (
+        <RescheduleModal
+          booking={rescheduleBooking}
+          onClose={() => setRescheduleBooking(null)}
+          onRescheduled={(updated) => {
+            setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
+            setRescheduleBooking(null)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
 import AnalyticsTab from '../components/analytics/AnalyticsTab'
 import DogLoader from '../components/DogLoader'
+import RescheduleModal from '../components/RescheduleModal'
 
 interface Booking {
   id: string
@@ -100,6 +101,7 @@ function BookingsTab() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [filterLoading, setFilterLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
 
   useEffect(() => {
     if (initialLoading) {
@@ -207,6 +209,12 @@ function BookingsTab() {
                     {b.status === 'confirmed' && (
                       <>
                         <button
+                          onClick={() => setRescheduleBooking(b)}
+                          className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/20"
+                        >
+                          Reschedule
+                        </button>
+                        <button
                           onClick={() => updateStatus(b.id, 'completed')}
                           className="rounded-full bg-sage-light px-3 py-1 text-xs font-semibold text-sage transition-colors hover:bg-sage hover:text-white"
                         >
@@ -226,6 +234,17 @@ function BookingsTab() {
             )
           })}
         </div>
+      )}
+
+      {rescheduleBooking && (
+        <RescheduleModal
+          booking={rescheduleBooking}
+          onClose={() => setRescheduleBooking(null)}
+          onRescheduled={(updated) => {
+            setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
+            setRescheduleBooking(null)
+          }}
+        />
       )}
     </div>
   )

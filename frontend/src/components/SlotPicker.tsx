@@ -13,6 +13,7 @@ interface Props {
   selectedTime: string
   onDateChange: (date: string) => void
   onTimeChange: (time: string) => void
+  excludeBookingId?: string
 }
 
 function formatDate(d: Date): string {
@@ -34,7 +35,7 @@ function getDaysInMonth(year: number, month: number): Date[] {
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDateChange, onTimeChange }: Props) {
+export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDateChange, onTimeChange, excludeBookingId }: Props) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const [viewYear, setViewYear] = useState(today.getFullYear())
@@ -70,8 +71,9 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
     const controller = new AbortController()
 
     setLoadingSlots(true)
+    const url = `/api/availability/slots?date=${selectedDate}&serviceId=${serviceId}${excludeBookingId ? `&excludeBookingId=${excludeBookingId}` : ''}`
     apiFetch<{ slots: TimeSlot[] }>(
-      `/api/availability/slots?date=${selectedDate}&serviceId=${serviceId}`,
+      url,
       { signal: controller.signal },
     )
       .then(data => { if (!cancelled) setSlots(data.slots) })
@@ -82,7 +84,7 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
       cancelled = true
       controller.abort()
     }
-  }, [selectedDate, serviceId])
+  }, [selectedDate, serviceId, excludeBookingId])
 
   const formatTimeDisplay = (time: string) => {
     const [h, m] = time.split(':').map(Number)
