@@ -19,7 +19,7 @@ export default function App() {
           <Route
             path="/book"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireClient>
                 <BookingPage />
               </ProtectedRoute>
             }
@@ -27,7 +27,7 @@ export default function App() {
           <Route
             path="/my-bookings"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireClient>
                 <MyBookingsPage />
               </ProtectedRoute>
             }

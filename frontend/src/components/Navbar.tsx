@@ -86,20 +86,21 @@ export default function Navbar() {
                     exit={{ opacity: 0, y: -5 }}
                     className="absolute right-0 mt-2 w-48 rounded-xl border border-sky bg-white py-2 shadow-elevated"
                   >
-                    <Link
-                      to="/my-bookings"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
-                    >
-                      <CalendarCheck className="h-4 w-4" /> My Bookings
-                    </Link>
-                    {profile?.role === 'admin' && (
+                    {profile?.role === 'admin' ? (
                       <Link
                         to="/admin"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
                       >
-                        <Shield className="h-4 w-4" /> Admin
+                        <Shield className="h-4 w-4" /> Admin Dashboard
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/my-bookings"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
+                      >
+                        <CalendarCheck className="h-4 w-4" /> My Bookings
                       </Link>
                     )}
                     <hr className="my-1 border-sky" />
@@ -167,20 +168,21 @@ export default function Navbar() {
               ))}
               {user ? (
                 <>
-                  <Link
-                    to="/my-bookings"
-                    onClick={close}
-                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
-                  >
-                    My Bookings
-                  </Link>
-                  {profile?.role === 'admin' && (
+                  {profile?.role === 'admin' ? (
                     <Link
                       to="/admin"
                       onClick={close}
                       className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
                     >
                       Admin Dashboard
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/my-bookings"
+                      onClick={close}
+                      className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
+                    >
+                      My Bookings
                     </Link>
                   )}
                   <button
