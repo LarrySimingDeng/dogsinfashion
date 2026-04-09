@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Home, TreePine, Building2, Wheat, Navigation } from 'lucide-react'
 import { motion } from 'framer-motion'
-import car1 from '../assets/car1.jpg'
-import car2 from '../assets/car2.jpg'
+import car1 from '../assets/car1.JPG'
+import car2 from '../assets/car2.JPG'
 import equip from '../assets/equip.JPG'
 import './HoverCarousel.scss'
 
