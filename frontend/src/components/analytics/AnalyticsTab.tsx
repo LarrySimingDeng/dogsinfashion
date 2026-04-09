@@ -28,7 +28,7 @@ export default function AnalyticsTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center py-32">
         <DogLoader />
       </div>
     )
