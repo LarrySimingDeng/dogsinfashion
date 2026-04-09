@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, Settings, Filter, Bell } from 'lucide-react'
+import { Calendar, Clock, Settings, Filter, Bell, BarChart3 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
+import AnalyticsTab from '../components/analytics/AnalyticsTab'
 
 interface Booking {
   id: string
@@ -36,7 +37,7 @@ interface BlockedDate {
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState<'bookings' | 'schedule' | 'reminders'>('bookings')
+  const [tab, setTab] = useState<'analytics' | 'bookings' | 'schedule' | 'reminders'>('analytics')
 
   return (
     <div className="min-h-screen bg-background px-6 pb-20 pt-28">
@@ -44,7 +45,17 @@ export default function AdminDashboard() {
         <h1 className="mb-6 font-display text-3xl font-bold text-warm-dark">Admin Dashboard</h1>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setTab('analytics')}
+            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
+              tab === 'analytics'
+                ? 'bg-secondary text-white'
+                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" /> Analytics
+          </button>
           <button
             onClick={() => setTab('bookings')}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
@@ -77,7 +88,7 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {tab === 'bookings' ? <BookingsTab /> : tab === 'schedule' ? <ScheduleTab /> : <RemindersTab />}
+        {tab === 'analytics' ? <AnalyticsTab /> : tab === 'bookings' ? <BookingsTab /> : tab === 'schedule' ? <ScheduleTab /> : <RemindersTab />}
       </div>
     </div>
   )
