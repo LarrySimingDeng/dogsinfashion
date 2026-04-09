@@ -305,7 +305,7 @@ function ScheduleTab() {
         <div className="space-y-3">
           {availability.map(row => (
             <div key={row.id} className="flex items-center gap-3">
-              <label className="flex w-28 shrink-0 items-center gap-2">
+              <label className="flex w-24 shrink-0 items-center gap-2">
                 <input
                   type="checkbox"
                   checked={row.is_active}
