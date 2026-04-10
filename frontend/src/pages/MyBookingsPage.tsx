@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, MapPin, Dog, Plus, RefreshCw } from 'lucide-react'
 import DogLoader from '../components/DogLoader'
@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
 import RescheduleModal from '../components/RescheduleModal'
+import Toast, { ToastData } from '../components/Toast'
 
 interface Booking {
   id: string
@@ -27,6 +28,10 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
+  const [toasts, setToasts] = useState<ToastData[]>([])
+  const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), [])
+  const showToast = (message: string, type: ToastData['type'] = 'success') =>
+    setToasts(prev => prev.some(t => t.message === message) ? prev : [...prev, { id: Date.now(), message, type }])
 
   useEffect(() => {
     apiFetch<Booking[]>('/api/bookings')
@@ -76,53 +81,67 @@ export default function MyBookingsPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border-2 border-sky bg-white p-5 transition-shadow hover:shadow-soft"
+        className="overflow-hidden rounded-3xl bg-white shadow-soft transition-shadow hover:shadow-elevated"
       >
-        <div className="mb-3 flex items-start justify-between">
-          <div>
+        {/* Thin accent bar */}
+        <div className="h-1.5 bg-gradient-to-r from-secondary via-sky-deep to-sky" />
+
+        <div className="p-5">
+          {/* Header row: service name + price */}
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-bold text-warm-dark">
               {service?.name || LEGACY_SERVICE_NAMES[booking.service_id] || booking.service_id}
             </h3>
-            <span className={`mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-semibold ${statusColors[booking.status]}`}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </span>
+            {service && (
+              <span className="font-display text-2xl font-bold text-primary/70">
+                ${service.price}
+              </span>
+            )}
           </div>
-          {service && (
-            <span className="font-display text-xl font-bold text-secondary">
-              ${service.price}
-            </span>
-          )}
+
+          {/* Two-column layout: details left, badge + action right */}
+          <div className="flex gap-5">
+            {/* Details */}
+            <div className="flex-1 space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-semibold text-warm-dark">Date</span>
+                <span className="text-warm-gray">{new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-semibold text-warm-dark">Time</span>
+                <span className="text-warm-gray">{formatTime(booking.start_time)} — {formatTime(booking.end_time)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Dog className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-semibold text-warm-dark">Dog Name</span>
+                <span className="text-warm-gray">{booking.dog_name}{booking.dog_breed ? ` (${booking.dog_breed})` : ''}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-semibold text-warm-dark">Address</span>
+                <span className="text-warm-gray">{booking.address}</span>
+              </div>
+            </div>
+
+            {/* Right column: badge + reschedule */}
+            <div className="flex shrink-0 flex-col items-end justify-between">
+              <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[booking.status]}`}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </span>
+              {showReschedule && (
+                <button
+                  onClick={() => setRescheduleBooking(booking)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-glow"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reschedule
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-
-        <div className="space-y-1.5 text-sm text-warm-gray">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            {formatTime(booking.start_time)} — {formatTime(booking.end_time)}
-          </div>
-          <div className="flex items-center gap-2">
-            <Dog className="h-4 w-4" />
-            {booking.dog_name}{booking.dog_breed ? ` (${booking.dog_breed})` : ''}
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            {booking.address}
-          </div>
-        </div>
-
-        {showReschedule && (
-          <button
-            onClick={() => setRescheduleBooking(booking)}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-4 py-1.5 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/20"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Reschedule
-          </button>
-        )}
-
       </motion.div>
     )
   }
@@ -205,9 +224,12 @@ export default function MyBookingsPage() {
           onRescheduled={(updated) => {
             setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
             setRescheduleBooking(null)
+            showToast('Booking rescheduled successfully!')
           }}
         />
       )}
+
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

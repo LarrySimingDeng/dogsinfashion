@@ -1,20 +1,18 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 import { config } from '../config.js'
 import type { Booking } from '../types.js'
 import { SERVICE_NAMES, SERVICE_PRICES } from '../data/services.js'
+
+const FROM_ADDRESS = 'Dogs in Fashion <noreply@dogsinfashion.com>'
+
+const resend: Resend | null = config.RESEND_API_KEY
+  ? new Resend(config.RESEND_API_KEY)
+  : null
 
 function serviceDisplayName(serviceId: string): string {
   const name = SERVICE_NAMES[serviceId] ?? serviceId
   const price = SERVICE_PRICES[serviceId]
   return price ? `${name} ($${price})` : name
-}
-
-function getTransporter() {
-  if (!config.SMTP_USER || !config.SMTP_PASS) return null
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: config.SMTP_USER, pass: config.SMTP_PASS },
-  })
 }
 
 function formatBookingDate(booking: Booking): string {
@@ -66,18 +64,26 @@ function generateIcs(booking: Booking, clientEmail: string, sequence: number = 0
   ].join('\r\n')
 }
 
+function icsAttachment(icsContent: string) {
+  return {
+    filename: 'invite.ics',
+    content: Buffer.from(icsContent, 'utf-8'),
+    contentType: 'text/calendar; method=REQUEST; charset=UTF-8',
+  }
+}
+
 export async function sendBookingConfirmation(booking: Booking, clientEmail: string): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) return
+  if (!resend) return
 
   const serviceName = serviceDisplayName(booking.service_id)
 
   try {
     const icsContent = generateIcs(booking, clientEmail)
 
-    await transporter.sendMail({
-      from: `"Dogs in Fashion" <${config.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to: clientEmail,
+      replyTo: config.DORIS_EMAIL,
       subject: `Booking Confirmed — ${booking.dog_name} on ${formatBookingDate(booking)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
@@ -94,26 +100,24 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
           <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
         </div>
       `,
-      icalEvent: {
-        method: 'REQUEST',
-        content: icsContent,
-      },
+      attachments: [icsAttachment(icsContent)],
     })
+    if (error) throw error
   } catch (err) {
     console.error('Failed to send confirmation email:', err)
   }
 }
 
 export async function notifyDorisNewBooking(booking: Booking, clientEmail: string): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) return
+  if (!resend) return
 
   const serviceName = serviceDisplayName(booking.service_id)
 
   try {
-    await transporter.sendMail({
-      from: `"Dogs in Fashion" <${config.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to: config.DORIS_EMAIL,
+      replyTo: clientEmail,
       subject: `New Booking: ${booking.dog_name} — ${formatBookingDate(booking)}`,
       html: `
         <div style="font-family:Arial,sans-serif">
@@ -128,6 +132,7 @@ export async function notifyDorisNewBooking(booking: Booking, clientEmail: strin
         </div>
       `,
     })
+    if (error) throw error
   } catch (err) {
     console.error('Failed to notify Doris:', err)
   }
@@ -139,8 +144,7 @@ export async function sendRescheduleNotification(
   oldDate: string,
   oldStartTime: string,
 ): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) return
+  if (!resend) return
 
   const serviceName = serviceDisplayName(booking.service_id)
   const oldBooking = { ...booking, date: oldDate, start_time: oldStartTime }
@@ -149,9 +153,10 @@ export async function sendRescheduleNotification(
   try {
     const icsContent = generateIcs(booking, clientEmail, 1)
 
-    await transporter.sendMail({
-      from: `"Dogs in Fashion" <${config.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to: clientEmail,
+      replyTo: config.DORIS_EMAIL,
       subject: `Booking Rescheduled — ${booking.dog_name} on ${formatBookingDate(booking)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
@@ -169,11 +174,9 @@ export async function sendRescheduleNotification(
           <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
         </div>
       `,
-      icalEvent: {
-        method: 'REQUEST',
-        content: icsContent,
-      },
+      attachments: [icsAttachment(icsContent)],
     })
+    if (error) throw error
   } catch (err) {
     console.error('Failed to send reschedule notification:', err)
   }
@@ -185,17 +188,17 @@ export async function notifyDorisReschedule(
   oldDate: string,
   oldStartTime: string,
 ): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) return
+  if (!resend) return
 
   const serviceName = serviceDisplayName(booking.service_id)
   const oldBooking = { ...booking, date: oldDate, start_time: oldStartTime }
   const oldDateDisplay = formatBookingDate(oldBooking)
 
   try {
-    await transporter.sendMail({
-      from: `"Dogs in Fashion" <${config.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to: config.DORIS_EMAIL,
+      replyTo: clientEmail,
       subject: `Booking Rescheduled: ${booking.dog_name} — ${formatBookingDate(booking)}`,
       html: `
         <div style="font-family:Arial,sans-serif">
@@ -211,21 +214,22 @@ export async function notifyDorisReschedule(
         </div>
       `,
     })
+    if (error) throw error
   } catch (err) {
     console.error('Failed to notify Doris about reschedule:', err)
   }
 }
 
 export async function sendReminderEmail(booking: Booking, clientEmail: string): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) return
+  if (!resend) return
 
   const serviceName = serviceDisplayName(booking.service_id)
 
   try {
-    await transporter.sendMail({
-      from: `"Dogs in Fashion" <${config.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
       to: clientEmail,
+      replyTo: config.DORIS_EMAIL,
       subject: `Reminder: ${booking.dog_name}'s grooming tomorrow!`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
@@ -236,6 +240,7 @@ export async function sendReminderEmail(booking: Booking, clientEmail: string): 
         </div>
       `,
     })
+    if (error) throw error
   } catch (err) {
     console.error('Failed to send reminder email:', err)
   }
