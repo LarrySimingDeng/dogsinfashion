@@ -8,6 +8,7 @@ import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '.
 import { sendBookingConfirmation, notifyDorisNewBooking, sendRescheduleNotification, notifyDorisReschedule } from '../services/email.js'
 import { notifyDorisSms, notifyDorisRescheduleSms } from '../services/sms.js'
 import { scheduleReminders, cancelReminders } from '../jobs/reminder-scheduler.js'
+import { config } from '../config.js'
 import type { AuthRequest } from '../types.js'
 import { SERVICE_DURATIONS } from '../data/services.js'
 
@@ -78,13 +79,20 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     return
   }
 
-  // Fire-and-forget: calendar event + notifications (all with .catch to prevent crashes)
+  // Await calendar event creation to prevent race with sync job.
+  // If this fails, the sync job will retry later as a safety net.
   const clientEmail = req.user!.email
-  createCalendarEvent(booking, clientEmail).then(async eventId => {
+  try {
+    const eventId = await createCalendarEvent(booking, clientEmail)
     if (eventId) {
       await supabaseAdmin.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id)
+      booking.google_event_id = eventId
     }
-  }).catch(err => console.error('Calendar event failed:', err))
+  } catch (err) {
+    console.error('Calendar event failed:', err)
+  }
+
+  // Fire-and-forget notifications (no duplicate risk)
   sendBookingConfirmation(booking, clientEmail).catch(err => console.error('Confirmation email failed:', err))
   notifyDorisNewBooking(booking, clientEmail).catch(err => console.error('Doris email failed:', err))
   notifyDorisSms(booking).catch(err => console.error('Doris SMS failed:', err))
@@ -240,12 +248,14 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
     return
   }
 
-  // 24-hour advance notice check
-  const existingStart = new Date(`${booking.date}T${booking.start_time}`)
-  const hoursUntil = (existingStart.getTime() - Date.now()) / (1000 * 60 * 60)
-  if (hoursUntil < 24) {
-    res.status(400).json({ error: 'Cannot reschedule within 24 hours of the appointment' })
-    return
+  // 24-hour advance notice check (skipped in development)
+  if (config.NODE_ENV !== 'development') {
+    const existingStart = new Date(`${booking.date}T${booking.start_time}`)
+    const hoursUntil = (existingStart.getTime() - Date.now()) / (1000 * 60 * 60)
+    if (hoursUntil < 24) {
+      res.status(400).json({ error: 'Cannot reschedule within 24 hours of the appointment' })
+      return
+    }
   }
 
   const { date, start_time } = parsed.data

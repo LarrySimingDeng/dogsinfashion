@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { supabase, isRecoveryLink } from '../lib/supabase'
 
 interface Profile {
   id: string
@@ -15,6 +15,8 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   isLoading: boolean
+  isRecovery: boolean
+  clearRecovery: () => void
   signOut: () => Promise<void>
 }
 
@@ -23,6 +25,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   profile: null,
   isLoading: true,
+  isRecovery: false,
+  clearRecovery: () => {},
   signOut: async () => {},
 })
 
@@ -31,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRecovery, setIsRecovery] = useState(isRecoveryLink)
+
+  const clearRecovery = useCallback(() => setIsRecovery(false), [])
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -54,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
+      (event, s) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsRecovery(true)
+        }
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
@@ -75,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, isLoading, isRecovery, clearRecovery, signOut }}>
       {children}
     </AuthContext.Provider>
   )

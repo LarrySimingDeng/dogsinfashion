@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
-import { Calendar, Clock, Settings, Filter, Bell, BarChart3 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Calendar, Clock, Settings, Filter, Bell, BarChart3, Dog, MapPin, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
 import AnalyticsTab from '../components/analytics/AnalyticsTab'
 import DogLoader from '../components/DogLoader'
 import RescheduleModal from '../components/RescheduleModal'
+import Toast, { ToastData } from '../components/Toast'
 
 interface Booking {
   id: string
@@ -102,6 +103,11 @@ function BookingsTab() {
   const [filterLoading, setFilterLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+  const [toasts, setToasts] = useState<ToastData[]>([])
+  const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), [])
+  const showToast = (message: string, type: ToastData['type'] = 'success') =>
+    setToasts(prev => prev.some(t => t.message === message) ? prev : [...prev, { id: Date.now(), message, type }])
 
   useEffect(() => {
     if (initialLoading) {
@@ -117,14 +123,19 @@ function BookingsTab() {
   }, [statusFilter])
 
   const updateStatus = async (id: string, status: 'completed' | 'cancelled') => {
+    if (updatingIds.has(id)) return
+    setUpdatingIds(prev => new Set(prev).add(id))
     try {
       await apiFetch(`/api/bookings/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       })
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
+      showToast(`Booking ${status === 'completed' ? 'marked as completed' : 'cancelled'} successfully!`)
     } catch {
-      alert('Failed to update status')
+      showToast('Failed to update status', 'error')
+    } finally {
+      setUpdatingIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
   }
 
@@ -178,56 +189,81 @@ function BookingsTab() {
                 key={b.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="rounded-2xl border-2 border-sky bg-white p-5"
+                className="overflow-hidden rounded-3xl bg-white shadow-soft transition-shadow hover:shadow-elevated"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
+                <div className="h-1.5 bg-gradient-to-r from-secondary via-sky-deep to-sky" />
+
+                <div className="p-5">
+                  {/* Header: service name + price */}
+                  <div className="mb-4 flex items-center justify-between">
                     <h3 className="font-display text-lg font-bold text-warm-dark">
-                      {b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}
+                      {service?.name || LEGACY_SERVICE_NAMES[b.service_id] || b.service_id}
                     </h3>
-                    <p className="text-sm text-warm-gray">
-                      {service?.name || LEGACY_SERVICE_NAMES[b.service_id] || b.service_id}{service ? ` \u00b7 $${service.price}` : ''}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-warm-gray">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(b.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {service && (
+                      <span className="font-display text-2xl font-bold text-primary/70">
+                        ${service.price}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatTime(b.start_time)}
-                      </span>
-                      <span>{b.address}</span>
-                    </div>
-                    {b.notes && <p className="mt-1 text-xs italic text-warm-gray">Note: {b.notes}</p>}
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${statusColors[b.status]}`}>
-                      {b.status}
-                    </span>
-                    {b.status === 'confirmed' && (
-                      <>
-                        <button
-                          onClick={() => setRescheduleBooking(b)}
-                          className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary transition-colors hover:bg-secondary/20"
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          onClick={() => updateStatus(b.id, 'completed')}
-                          className="rounded-full bg-sage-light px-3 py-1 text-xs font-semibold text-sage transition-colors hover:bg-sage hover:text-white"
-                        >
-                          Complete
-                        </button>
-                        <button
-                          onClick={() => updateStatus(b.id, 'cancelled')}
-                          className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
+                  {/* Two-column: details left, badge + actions right */}
+                  <div className="flex gap-5">
+                    <div className="flex-1 space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="font-semibold text-warm-dark">Date</span>
+                        <span className="text-warm-gray">{new Date(b.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="font-semibold text-warm-dark">Time</span>
+                        <span className="text-warm-gray">{formatTime(b.start_time)} — {formatTime(b.end_time)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Dog className="h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="font-semibold text-warm-dark">Dog Name</span>
+                        <span className="text-warm-gray">{b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="font-semibold text-warm-dark">Address</span>
+                        <span className="text-warm-gray">{b.address}</span>
+                      </div>
+                      {b.notes && (
+                        <p className="mt-1 text-xs italic text-warm-gray">Note: {b.notes}</p>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-end justify-between">
+                      <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}>
+                        {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                      </span>
+                      {b.status === 'confirmed' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setRescheduleBooking(b)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-glow"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Reschedule
+                          </button>
+                          <button
+                            onClick={() => updateStatus(b.id, 'completed')}
+                            disabled={updatingIds.has(b.id)}
+                            className="rounded-full bg-sage-light px-3 py-1.5 text-xs font-bold text-sage transition-colors hover:bg-sage hover:text-white disabled:opacity-50"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={() => updateStatus(b.id, 'cancelled')}
+                            disabled={updatingIds.has(b.id)}
+                            className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -243,9 +279,12 @@ function BookingsTab() {
           onRescheduled={(updated) => {
             setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
             setRescheduleBooking(null)
+            showToast('Booking rescheduled successfully!')
           }}
         />
       )}
+
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
