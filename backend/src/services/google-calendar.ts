@@ -84,8 +84,15 @@ export async function deleteCalendarEvent(eventId: string): Promise<void> {
       eventId,
       sendUpdates: 'all',
     })
-  } catch (err) {
-    console.error('Failed to delete calendar event:', err)
+  } catch (err: any) {
+    // 404 = event already gone, treat as success (idempotent)
+    const status = err?.code ?? err?.response?.status
+    if (status === 404 || status === 410) {
+      console.warn('[calendar] event already deleted or not found:', eventId)
+      return
+    }
+    // Other errors propagate to caller
+    throw err
   }
 }
 

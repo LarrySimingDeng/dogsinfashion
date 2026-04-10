@@ -43,20 +43,6 @@ export default function MyBookingsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Cancel functionality disabled — we prefer customers not to self-cancel
-  // const handleCancel = async (id: string) => {
-  //   if (!confirm('Are you sure you want to cancel this booking?')) return
-  //   try {
-  //     await apiFetch(`/api/bookings/${id}/status`, {
-  //       method: 'PATCH',
-  //       body: JSON.stringify({ status: 'cancelled' }),
-  //     })
-  //     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b))
-  //   } catch {
-  //     alert('Failed to cancel booking')
-  //   }
-  // }
-
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled').reverse()

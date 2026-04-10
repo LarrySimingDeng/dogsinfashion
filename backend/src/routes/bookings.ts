@@ -5,7 +5,14 @@ import { requireAdmin } from '../middleware/admin.js'
 import { supabaseAdmin } from '../services/supabase.js'
 import { getAvailableSlots } from '../services/slots.js'
 import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '../services/google-calendar.js'
-import { sendBookingConfirmation, notifyDorisNewBooking, sendRescheduleNotification, notifyDorisReschedule } from '../services/email.js'
+import {
+  sendBookingConfirmation,
+  notifyDorisNewBooking,
+  sendRescheduleNotification,
+  notifyDorisReschedule,
+  sendCancellationNotification,
+  notifyDorisCancellation,
+} from '../services/email.js'
 import { notifyDorisSms, notifyDorisRescheduleSms } from '../services/sms.js'
 import { scheduleReminders, cancelReminders } from '../jobs/reminder-scheduler.js'
 import { config } from '../config.js'
@@ -177,14 +184,14 @@ bookingsRouter.patch('/:id/status', requireAuth, async (req: AuthRequest, res) =
     return
   }
 
-  // Only admin can mark as completed, owner or admin can cancel
+  // Admin-only for both completed and cancelled
   if (parsed.data.status === 'completed' && req.user!.role !== 'admin') {
     res.status(403).json({ error: 'Only admin can mark bookings as completed' })
     return
   }
 
-  if (parsed.data.status === 'cancelled' && booking.user_id !== req.user!.id && req.user!.role !== 'admin') {
-    res.status(403).json({ error: 'Access denied' })
+  if (parsed.data.status === 'cancelled' && req.user!.role !== 'admin') {
+    res.status(403).json({ error: 'Only admin can cancel bookings' })
     return
   }
 
@@ -200,12 +207,45 @@ bookingsRouter.patch('/:id/status', requireAuth, async (req: AuthRequest, res) =
     return
   }
 
-  // On cancel: delete calendar event + cancel pending reminders
-  if (parsed.data.status === 'cancelled' && booking.google_event_id) {
-    deleteCalendarEvent(booking.google_event_id).catch(err => console.error('Delete calendar event failed:', err))
-  }
+  // On cancel: sync calendar, cancel reminders, notify customer + Doris
   if (parsed.data.status === 'cancelled') {
-    cancelReminders(booking.id).catch(err => console.error('Cancel reminders failed:', err))
+    // Fetch the client email (admin != booking owner)
+    let clientEmail = req.user!.email
+    if (booking.user_id !== req.user!.id) {
+      try {
+        const { data: { user: clientUser } } = await supabaseAdmin.auth.admin.getUserById(booking.user_id)
+        if (clientUser?.email) clientEmail = clientUser.email
+      } catch (err) {
+        console.error('[cancel] failed to fetch client email:', err)
+      }
+    }
+
+    // Await calendar delete so failures are observable
+    if (booking.google_event_id) {
+      try {
+        await deleteCalendarEvent(booking.google_event_id)
+      } catch (err) {
+        console.error('[cancel] calendar delete failed', {
+          bookingId: booking.id,
+          eventId: booking.google_event_id,
+          err,
+        })
+        // Don't roll back DB; calendar inconsistency is secondary
+      }
+    }
+
+    // Await reminder cancellation
+    try {
+      await cancelReminders(booking.id)
+    } catch (err) {
+      console.error('[cancel] cancel reminders failed', { bookingId: booking.id, err })
+    }
+
+    // Fire-and-forget emails
+    sendCancellationNotification(updated, clientEmail)
+      .catch(err => console.error('[cancel] customer email failed:', err))
+    notifyDorisCancellation(updated, clientEmail)
+      .catch(err => console.error('[cancel] Doris email failed:', err))
   }
 
   res.json(updated)

@@ -124,6 +124,13 @@ function BookingsTab() {
 
   const updateStatus = async (id: string, status: 'completed' | 'cancelled') => {
     if (updatingIds.has(id)) return
+    if (status === 'cancelled') {
+      const booking = bookings.find(b => b.id === id)
+      const label = booking ? `${booking.dog_name} on ${booking.date} at ${booking.start_time}` : 'this booking'
+      if (!confirm(`Cancel ${label}?\n\nThis will remove the Google Calendar event and email the customer.`)) {
+        return
+      }
+    }
     setUpdatingIds(prev => new Set(prev).add(id))
     try {
       await apiFetch(`/api/bookings/${id}/status`, {

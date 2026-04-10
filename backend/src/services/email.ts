@@ -29,19 +29,27 @@ function formatTime(time: string): string {
   return `${dh}:${String(m!).padStart(2, '0')} ${ampm}`
 }
 
-function generateIcs(booking: Booking, clientEmail: string, sequence: number = 0): string {
+function generateIcs(
+  booking: Booking,
+  clientEmail: string,
+  options: { method?: 'REQUEST' | 'CANCEL'; sequence?: number } = {},
+): string {
+  const method = options.method ?? 'REQUEST'
+  const sequence = options.sequence ?? 0
+  const status = method === 'CANCEL' ? 'CANCELLED' : 'CONFIRMED'
+
   const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
   // Convert to UTC-compatible format: YYYYMMDDTHHMMSS
   const dtStart = `${booking.date.replace(/-/g, '')}T${booking.start_time.replace(/:/g, '')}00`
   const dtEnd = `${booking.date.replace(/-/g, '')}T${booking.end_time.replace(/:/g, '')}00`
   const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 
-  return [
+  const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Dogs in Fashion//Booking//EN',
     'CALSCALE:GREGORIAN',
-    'METHOD:REQUEST',
+    `METHOD:${method}`,
     'BEGIN:VEVENT',
     `DTSTART;TZID=America/Los_Angeles:${dtStart}`,
     `DTEND;TZID=America/Los_Angeles:${dtEnd}`,
@@ -53,22 +61,29 @@ function generateIcs(booking: Booking, clientEmail: string, sequence: number = 0
     `LOCATION:${booking.address}`,
     `ORGANIZER;CN=Dogs in Fashion:mailto:${config.DORIS_EMAIL}`,
     `ATTENDEE;CN=Client;RSVP=TRUE:mailto:${clientEmail}`,
-    'STATUS:CONFIRMED',
-    'BEGIN:VALARM',
-    'TRIGGER:-PT60M',
-    'ACTION:DISPLAY',
-    'DESCRIPTION:Grooming appointment in 1 hour',
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n')
+    `STATUS:${status}`,
+  ]
+
+  // Only add reminder alarm for active bookings, not cancellations
+  if (method === 'REQUEST') {
+    lines.push(
+      'BEGIN:VALARM',
+      'TRIGGER:-PT60M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Grooming appointment in 1 hour',
+      'END:VALARM',
+    )
+  }
+
+  lines.push('END:VEVENT', 'END:VCALENDAR')
+  return lines.join('\r\n')
 }
 
-function icsAttachment(icsContent: string) {
+function icsAttachment(icsContent: string, method: 'REQUEST' | 'CANCEL' = 'REQUEST') {
   return {
     filename: 'invite.ics',
     content: Buffer.from(icsContent, 'utf-8'),
-    contentType: 'text/calendar; method=REQUEST; charset=UTF-8',
+    contentType: `text/calendar; method=${method}; charset=UTF-8`,
   }
 }
 
@@ -78,7 +93,7 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
   const serviceName = serviceDisplayName(booking.service_id)
 
   try {
-    const icsContent = generateIcs(booking, clientEmail)
+    const icsContent = generateIcs(booking, clientEmail, { method: 'REQUEST', sequence: 0 })
 
     const { error } = await resend.emails.send({
       from: FROM_ADDRESS,
@@ -151,7 +166,7 @@ export async function sendRescheduleNotification(
   const oldDateDisplay = formatBookingDate(oldBooking)
 
   try {
-    const icsContent = generateIcs(booking, clientEmail, 1)
+    const icsContent = generateIcs(booking, clientEmail, { method: 'REQUEST', sequence: 1 })
 
     const { error } = await resend.emails.send({
       from: FROM_ADDRESS,
@@ -243,5 +258,78 @@ export async function sendReminderEmail(booking: Booking, clientEmail: string): 
     if (error) throw error
   } catch (err) {
     console.error('Failed to send reminder email:', err)
+  }
+}
+
+export async function sendCancellationNotification(
+  booking: Booking,
+  clientEmail: string,
+): Promise<void> {
+  if (!resend) return
+
+  const serviceName = serviceDisplayName(booking.service_id)
+
+  try {
+    // sequence=999 ensures this CANCEL overrides any prior invite/update
+    const icsContent = generateIcs(booking, clientEmail, { method: 'CANCEL', sequence: 999 })
+
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: clientEmail,
+      replyTo: config.DORIS_EMAIL,
+      subject: `Booking Cancelled — ${booking.dog_name} on ${formatBookingDate(booking)}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
+          <h2 style="color:#B84A4A">Your Booking Has Been Cancelled</h2>
+          <p>Hi there! Unfortunately, your grooming appointment has been cancelled:</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:8px;color:#7A7570">Service</td><td style="padding:8px;font-weight:bold">${serviceName}</td></tr>
+            <tr><td style="padding:8px;color:#7A7570">Dog</td><td style="padding:8px;font-weight:bold">${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}</td></tr>
+            <tr><td style="padding:8px;color:#7A7570">Date</td><td style="padding:8px;font-weight:bold">${formatBookingDate(booking)}</td></tr>
+            <tr><td style="padding:8px;color:#7A7570">Time</td><td style="padding:8px;font-weight:bold">${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</td></tr>
+          </table>
+          <p>If you'd like to reschedule or have any questions, please contact Doris directly or <a href="https://www.dogsinfashion.com/book">book a new appointment</a>.</p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
+        </div>
+      `,
+      attachments: [icsAttachment(icsContent, 'CANCEL')],
+    })
+    if (error) throw error
+  } catch (err) {
+    console.error('Failed to send cancellation notification:', err)
+  }
+}
+
+export async function notifyDorisCancellation(
+  booking: Booking,
+  clientEmail: string,
+): Promise<void> {
+  if (!resend) return
+
+  const serviceName = serviceDisplayName(booking.service_id)
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: config.DORIS_EMAIL,
+      replyTo: clientEmail,
+      subject: `Booking Cancelled: ${booking.dog_name} — ${formatBookingDate(booking)}`,
+      html: `
+        <div style="font-family:Arial,sans-serif">
+          <h2 style="color:#B84A4A">Booking Cancelled (Archive)</h2>
+          <p>This booking has been cancelled:</p>
+          <p><strong>Service:</strong> ${serviceName}</p>
+          <p><strong>Dog:</strong> ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}</p>
+          <p><strong>Date:</strong> ${formatBookingDate(booking)}</p>
+          <p><strong>Time:</strong> ${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</p>
+          <p><strong>Address:</strong> ${booking.address}</p>
+          <p><strong>Client Email:</strong> ${clientEmail}</p>
+          <p style="color:#7A7570;font-size:13px;margin-top:16px">Customer has been notified via email. Google Calendar event has been removed.</p>
+        </div>
+      `,
+    })
+    if (error) throw error
+  } catch (err) {
+    console.error('Failed to notify Doris about cancellation:', err)
   }
 }
