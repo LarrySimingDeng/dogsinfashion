@@ -34,6 +34,11 @@ export default function BeforeAfterSlider({
   const draggingRef = useRef(false)
   const hasPeekedRef = useRef(false)
   const peekControlsRef = useRef<AnimationPlaybackControls | null>(null)
+  // Cached bounding rect (captured on pointer down, cleared on pointer up)
+  // Avoids expensive getBoundingClientRect() reflows on every move event.
+  const rectRef = useRef<{ left: number; width: number } | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const pendingClientXRef = useRef<number | null>(null)
   const [showHint, setShowHint] = useState(true)
 
   const position = useMotionValue(50)
@@ -62,11 +67,28 @@ export default function BeforeAfterSlider({
     return () => clearTimeout(timer)
   }, [inView, index, position])
 
-  const updateFromClientX = (clientX: number) => {
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
+  // Clean up any pending rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  // Merge all pending pointer moves into a single frame update.
+  // Uses the cached rect so we never touch layout mid-drag.
+  const flushPosition = () => {
+    rafRef.current = null
+    const clientX = pendingClientXRef.current
+    const rect = rectRef.current
+    if (clientX == null || !rect || rect.width === 0) return
     const pct = ((clientX - rect.left) / rect.width) * 100
-    position.set(Math.max(0, Math.min(100, pct)))
+    position.set(pct < 0 ? 0 : pct > 100 ? 100 : pct)
+  }
+
+  const scheduleUpdate = (clientX: number) => {
+    pendingClientXRef.current = clientX
+    if (rafRef.current !== null) return
+    rafRef.current = requestAnimationFrame(flushPosition)
   }
 
   const stopPeek = () => {
@@ -75,24 +97,43 @@ export default function BeforeAfterSlider({
   }
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = containerRef.current
+    if (!el) return
     stopPeek()
-    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+    // Cache the rect once per drag — reading it on every move is the #1
+    // cause of mobile jank (forces synchronous layout).
+    const rect = el.getBoundingClientRect()
+    rectRef.current = { left: rect.left, width: rect.width }
+    try {
+      el.setPointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
+    }
     draggingRef.current = true
-    updateFromClientX(e.clientX)
+    scheduleUpdate(e.clientX)
   }
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current) return
-    updateFromClientX(e.clientX)
+    scheduleUpdate(e.clientX)
   }
 
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    try {
-      ;(e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId)
-    } catch {
-      /* ignore */
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = containerRef.current
+    if (el) {
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
     }
     draggingRef.current = false
+    rectRef.current = null
+    pendingClientXRef.current = null
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -123,8 +164,8 @@ export default function BeforeAfterSlider({
         ref={containerRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
         onKeyDown={onKeyDown}
         role="slider"
         aria-label={`Before and after comparison${caption ? `: ${caption}` : ''}`}
@@ -133,6 +174,7 @@ export default function BeforeAfterSlider({
         aria-valuenow={50}
         aria-orientation="horizontal"
         tabIndex={0}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
         className="relative aspect-[4/5] w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-[28px] bg-sky/30 shadow-elevated ring-1 ring-warm-dark/5 transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_28px_60px_-12px_rgba(232,151,94,0.35)] focus-visible:ring-4 focus-visible:ring-primary/40"
       >
         {/* AFTER image (base layer) */}
