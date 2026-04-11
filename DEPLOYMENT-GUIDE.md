@@ -1,7 +1,7 @@
 # Dogs in Fashion — 生产环境配置指南
 
 > 本文档说明如何将开发环境（Larry 的测试账号）切换为生产环境（Doris 的正式账号）。
-> 开发环境使用 `<your-dev-email>`，生产环境使用 `dogsinfashionca@gmail.com`。
+> 开发环境使用 `<your-dev-email>`，生产环境使用 `contact@dogsinfashion.com`。
 
 ---
 
@@ -21,9 +21,9 @@
 
 | 配置项 | 开发环境（Larry） | 生产环境（Doris） |
 |--------|-------------------|-------------------|
-| DORIS_EMAIL（接收通知） | <your-dev-email> | dogsinfashionca@gmail.com |
+| DORIS_EMAIL（接收通知） | <your-dev-email> | contact@dogsinfashion.com |
 | RESEND_API_KEY | 同一个 Resend 账号的 key | 同一个（不需要改） |
-| DORIS_CALENDAR_ID | <your-dev-email> | dogsinfashionca@gmail.com |
+| DORIS_CALENDAR_ID | <your-dev-email> | contact@dogsinfashion.com |
 | GOOGLE_SERVICE_ACCOUNT_KEY | Larry 的 GCP 项目，同一个 Service Account | 同一个（不需要改） |
 | DORIS_PHONE | <your-dev-phone> (Larry) | +19162871878 (Doris) |
 | TWILIO_* | 暂未配置 | 需要完成 10DLC 注册 |
@@ -59,7 +59,7 @@
 ```env
 # Email (Resend)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxx   # 从 Resend Dashboard → API Keys 生成
-DORIS_EMAIL=dogsinfashionca@gmail.com  # 接收通知邮件的地址（开发环境填 Larry 的）
+DORIS_EMAIL=contact@dogsinfashion.com  # 接收通知邮件的地址（开发环境填 Larry 的）
 ```
 
 **From 地址是写死在代码里的**（`backend/src/services/email.ts` 顶部的 `FROM_ADDRESS` 常量），不需要在 .env 里配。
@@ -153,7 +153,7 @@ registry=https://registry.npmjs.org/
 
 ### 需要 Doris 操作（可以视频通话手把手教她）
 
-1. 用 `dogsinfashionca@gmail.com` 登录 Google
+1. 用 `contact@dogsinfashion.com` 登录 Google
 2. 打开 https://calendar.google.com
 3. 左侧 **Settings for my calendars** → 点自己的日历名字
 4. 滚到 **Share with specific people or groups**
@@ -171,7 +171,7 @@ registry=https://registry.npmjs.org/
 
 ```env
 # 改成 Doris 的日历 ID（就是她的 Gmail 地址）
-DORIS_CALENDAR_ID=dogsinfashionca@gmail.com
+DORIS_CALENDAR_ID=contact@dogsinfashion.com
 ```
 
 > 注意：`GOOGLE_SERVICE_ACCOUNT_KEY` 不需要改，开发和生产用同一个 Service Account。
@@ -358,18 +358,18 @@ VITE_SQUARE_ENVIRONMENT=production       # 决定加载 web.squarecdn.com 还是
 
 | 文件 | 位置 | 内容 |
 |------|------|------|
-| `backend/src/services/email.ts` | 邮件模板页脚 | `Doris — (916) 287-1878 — dogsinfashionca@gmail.com` |
+| `backend/src/services/email.ts` | 邮件模板页脚 | `Doris — (916) 287-1878 — contact@dogsinfashion.com` |
 
 ### 前端
 
 | 文件 | 内容 |
 |------|------|
-| `frontend/src/components/Footer.tsx` | `mailto:dogsinfashionca@gmail.com` |
-| `frontend/src/components/About.tsx` | `dogsinfashionca@gmail.com` |
-| `frontend/src/components/BookingForm.tsx` | `mailto:dogsinfashionca@gmail.com` |
-| `frontend/src/components/BookingCTA.tsx` | `mailto:dogsinfashionca@gmail.com` |
-| `frontend/src/utils/calendar.ts` | `Doris — (916) 287-1878` + `dogsinfashionca@gmail.com` |
-| `frontend/src/utils/messaging.ts` | `+19162871878` + `dogsinfashionca@gmail.com` |
+| `frontend/src/components/Footer.tsx` | `mailto:contact@dogsinfashion.com` |
+| `frontend/src/components/About.tsx` | `contact@dogsinfashion.com` |
+| `frontend/src/components/BookingForm.tsx` | `mailto:contact@dogsinfashion.com` |
+| `frontend/src/components/BookingCTA.tsx` | `mailto:contact@dogsinfashion.com` |
+| `frontend/src/utils/calendar.ts` | `Doris — (916) 287-1878` + `contact@dogsinfashion.com` |
+| `frontend/src/utils/messaging.ts` | `+19162871878` + `contact@dogsinfashion.com` |
 
 > 这些硬编码的都是 Doris 的真实联系方式，上线时不需要修改。
 > 开发测试时也不影响，因为它们只是展示用的联系信息，不参与实际的邮件/短信发送逻辑。
@@ -391,11 +391,11 @@ FRONTEND_URL=https://www.dogsinfashion.com
 
 # Google Calendar
 GOOGLE_SERVICE_ACCOUNT_KEY=<保持不变，和开发环境一样>
-DORIS_CALENDAR_ID=dogsinfashionca@gmail.com
+DORIS_CALENDAR_ID=contact@dogsinfashion.com
 
 # Email (Resend)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxx     # 从 Resend Dashboard 生成
-DORIS_EMAIL=dogsinfashionca@gmail.com    # 接收 New Booking 通知的地址
+DORIS_EMAIL=contact@dogsinfashion.com    # 接收 New Booking 通知的地址
 
 # SMS (Twilio) — 完成 10DLC 注册后启用
 TWILIO_ACCOUNT_SID=<见 Twilio Console>
@@ -429,8 +429,8 @@ LARRY_ALERT_EMAIL=<your-dev-email>
 - [x] Doris 的 Google Calendar 共享给 Service Account（Make changes to events 权限）
 
 ### 每次上线前需要确认
-- [ ] `backend/.env` 的 `DORIS_EMAIL` 改成 `dogsinfashionca@gmail.com`（开发时是 Larry 邮箱）
-- [ ] `backend/.env` 的 `DORIS_CALENDAR_ID` 改成 `dogsinfashionca@gmail.com`
+- [ ] `backend/.env` 的 `DORIS_EMAIL` 改成 `contact@dogsinfashion.com`（开发时是 Larry 邮箱）
+- [ ] `backend/.env` 的 `DORIS_CALENDAR_ID` 改成 `contact@dogsinfashion.com`
 - [ ] `backend/.env` 的 `FRONTEND_URL` 改成 `https://www.dogsinfashion.com`
 - [ ] `backend/.env` 的 `NODE_ENV=production`
 - [ ] Railway 环境变量同步上述改动

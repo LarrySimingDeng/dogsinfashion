@@ -8,8 +8,8 @@ const contacts = [
   { icon: MessageCircle, label: 'Text me to book', href: 'sms:+19162871878' },
   {
     icon: Mail,
-    label: 'dogsinfashionca@gmail.com',
-    href: 'mailto:dogsinfashionca@gmail.com',
+    label: 'contact@dogsinfashion.com',
+    href: 'mailto:contact@dogsinfashion.com',
   },
 ]
 

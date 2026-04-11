@@ -112,7 +112,7 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
             <tr><td style="padding:8px;color:#7A7570">Address</td><td style="padding:8px;font-weight:bold">${booking.address}</td></tr>
           </table>
           <p>Doris will arrive at your location at the scheduled time. If you need to make changes, please visit <a href="https://www.dogsinfashion.com/my-bookings">My Bookings</a> or contact Doris directly.</p>
-          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
         </div>
       `,
       attachments: [icsAttachment(icsContent)],
@@ -249,7 +249,7 @@ export async function sendRescheduleNotification(
             <tr><td style="padding:8px;color:#7A7570">Address</td><td style="padding:8px;font-weight:bold">${booking.address}</td></tr>
           </table>
           <p>If you have any questions, please visit <a href="https://www.dogsinfashion.com/my-bookings">My Bookings</a> or contact Doris directly.</p>
-          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
         </div>
       `,
       attachments: [icsAttachment(icsContent)],
@@ -360,7 +360,7 @@ export async function sendCancellationNotification(
           </table>
           ${depositNotice}
           <p>If you'd like to reschedule or have any questions, please contact Doris directly or <a href="https://www.dogsinfashion.com/book">book a new appointment</a>.</p>
-          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
         </div>
       `,
       attachments: [icsAttachment(icsContent, 'CANCEL')],

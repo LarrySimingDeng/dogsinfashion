@@ -10,7 +10,7 @@ const quickLinks = [
 const contacts = [
   { icon: Phone, label: '(916) 287-1878', href: 'tel:+19162871878' },
   { icon: MessageCircle, label: 'Text Doris', href: 'sms:+19162871878' },
-  { icon: Mail, label: 'Email', href: 'mailto:dogsinfashionca@gmail.com' },
+  { icon: Mail, label: 'Email', href: 'mailto:contact@dogsinfashion.com' },
 ]
 
 export default function Footer() {

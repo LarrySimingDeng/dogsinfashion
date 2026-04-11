@@ -216,7 +216,7 @@ export async function sendCancellationNotification(
             <tr><td style="padding:8px;color:#7A7570">Time</td><td style="padding:8px;font-weight:bold">${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</td></tr>
           </table>
           <p>If you'd like to reschedule or have any questions, please contact Doris directly or <a href="https://www.dogsinfashion.com/book">book a new appointment</a>.</p>
-          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
         </div>
       `,
       attachments: [icsAttachment(icsContent)],

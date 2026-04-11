@@ -97,10 +97,10 @@ export default function BookingCTA({ preselectedService }: Props) {
           </a>{' '}
           or email{' '}
           <a
-            href="mailto:dogsinfashionca@gmail.com"
+            href="mailto:contact@dogsinfashion.com"
             className="font-bold text-secondary no-underline"
           >
-            dogsinfashionca@gmail.com
+            contact@dogsinfashion.com
           </a>
         </div>
       </motion.div>

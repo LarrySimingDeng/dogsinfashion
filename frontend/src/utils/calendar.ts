@@ -39,7 +39,7 @@ export function addToGoogleCalendar(data: BookingData): void {
       data.notes ? `Notes: ${data.notes}` : '',
       '',
       'Groomer: Doris — (916) 287-1878',
-      'Email: dogsinfashionca@gmail.com',
+      'Email: contact@dogsinfashion.com',
       'Web: www.dogsinfashion.com',
     ]
       .filter(Boolean)

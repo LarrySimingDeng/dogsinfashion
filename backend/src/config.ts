@@ -10,11 +10,11 @@ const envSchema = z.object({
 
   // Google Calendar (optional — degrades gracefully)
   GOOGLE_SERVICE_ACCOUNT_KEY: z.string().optional(),
-  DORIS_CALENDAR_ID: z.string().default('dogsinfashionca@gmail.com'),
+  DORIS_CALENDAR_ID: z.string().default('contact@dogsinfashion.com'),
 
   // Email (Resend)
   RESEND_API_KEY: z.string().optional(),
-  DORIS_EMAIL: z.string().default('dogsinfashionca@gmail.com'),
+  DORIS_EMAIL: z.string().default('contact@dogsinfashion.com'),
 
   // Twilio SMS (optional)
   TWILIO_ACCOUNT_SID: z.string().optional(),

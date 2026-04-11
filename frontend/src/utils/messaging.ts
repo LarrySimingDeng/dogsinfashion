@@ -13,7 +13,7 @@ interface BookingData {
 }
 
 const DORIS_PHONE = '+19162871878'
-const DORIS_EMAIL = 'dogsinfashionca@gmail.com'
+const DORIS_EMAIL = 'contact@dogsinfashion.com'
 
 export function buildMessageBody(data: BookingData): string {
   const service = getServiceById(data.serviceId)

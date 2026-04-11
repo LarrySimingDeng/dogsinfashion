@@ -532,7 +532,7 @@ typescript tsx @types/express @types/cors (dev)
 2. 创建 Service Account → 下载 JSON 密钥
 3. Doris 在 Google Calendar → Settings → 共享 → 添加 Service Account 邮箱 → 权限"Make changes to events"
 4. 将 JSON 密钥内容存入 `backend/.env` 的 `GOOGLE_SERVICE_ACCOUNT_KEY`
-5. 设置 `DORIS_CALENDAR_ID=dogsinfashionca@gmail.com`
+5. 设置 `DORIS_CALENDAR_ID=contact@dogsinfashion.com`
 
 **测试：**
 - [ ] Service Account 创建成功
@@ -630,9 +630,9 @@ typescript tsx @types/express @types/cors (dev)
 
 **环境变量：**
 ```
-SMTP_USER=dogsinfashionca@gmail.com
+SMTP_USER=contact@dogsinfashion.com
 SMTP_PASS=<gmail-app-password>
-DORIS_EMAIL=dogsinfashionca@gmail.com
+DORIS_EMAIL=contact@dogsinfashion.com
 ```
 
 **测试：**
@@ -900,11 +900,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # Google Calendar
 GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
-DORIS_CALENDAR_ID=dogsinfashionca@gmail.com
+DORIS_CALENDAR_ID=contact@dogsinfashion.com
 
 # Email
-DORIS_EMAIL=dogsinfashionca@gmail.com
-SMTP_USER=dogsinfashionca@gmail.com
+DORIS_EMAIL=contact@dogsinfashion.com
+SMTP_USER=contact@dogsinfashion.com
 SMTP_PASS=<gmail-app-password>
 
 # SMS (Twilio)
