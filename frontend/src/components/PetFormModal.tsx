@@ -147,9 +147,10 @@ export default function PetFormModal({ pet, ownerId, onClose, onSaved }: Props) 
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-xl"
+        className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mb-4 flex items-start justify-between">
           <h2 className="font-display text-xl font-bold text-warm-dark">
             {isEdit ? 'Edit Pet' : 'Add a New Pet'}
@@ -274,6 +275,7 @@ export default function PetFormModal({ pet, ownerId, onClose, onSaved }: Props) 
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )
