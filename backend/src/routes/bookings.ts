@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { Router } from 'express'
 import { z } from 'zod'
 import { requireAuth } from '../middleware/auth.js'
@@ -8,6 +9,8 @@ import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '.
 import {
   sendBookingConfirmation,
   notifyDorisNewBooking,
+  notifyDorisDepositPaid,
+  notifyLarryCriticalError,
   sendRescheduleNotification,
   notifyDorisReschedule,
   sendCancellationNotification,
@@ -15,6 +18,7 @@ import {
 } from '../services/email.js'
 import { notifyDorisSms, notifyDorisRescheduleSms } from '../services/sms.js'
 import { scheduleReminders, cancelReminders } from '../jobs/reminder-scheduler.js'
+import { createSquarePayment, refundSquarePayment, isSquareConfigured } from '../services/square.js'
 import { config } from '../config.js'
 import type { AuthRequest } from '../types.js'
 import { SERVICE_DURATIONS } from '../data/services.js'
@@ -31,6 +35,13 @@ function addMinutesToTime(time: string, minutes: number): string {
 
 // Create booking
 bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
+  // Feature flag guard: when deposits are required, force clients through
+  // the atomic /with-deposit endpoint instead.
+  if (config.DEPOSIT_REQUIRED) {
+    res.status(503).json({ error: 'Deposit required. Use /api/bookings/with-deposit' })
+    return
+  }
+
   const schema = z.object({
     service_id: z.string().min(1),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -106,6 +117,189 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   scheduleReminders(booking, clientEmail).catch(err => console.error('Schedule reminders failed:', err))
 
   res.status(201).json(booking)
+})
+
+// Create booking with mandatory Square deposit (atomic: charge → insert → rollback on failure)
+bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) => {
+  // Short-circuit guards
+  if (!config.DEPOSIT_REQUIRED) {
+    res.status(503).json({ error: 'Deposits not enabled. Use /api/bookings' })
+    return
+  }
+  if (!isSquareConfigured()) {
+    res.status(503).json({ error: 'Payments temporarily unavailable' })
+    return
+  }
+
+  const schema = z.object({
+    service_id: z.string().min(1),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    start_time: z.string().regex(/^\d{2}:\d{2}$/),
+    dog_name: z.string().min(1),
+    dog_breed: z.string().optional(),
+    address: z.string().min(1),
+    notes: z.string().optional(),
+    source_id: z.string().min(1),         // Square Web SDK token
+    idempotency_key: z.string().uuid(),   // Client-generated UUID
+  })
+
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() })
+    return
+  }
+
+  const {
+    service_id, date, start_time, dog_name, dog_breed, address, notes,
+    source_id, idempotency_key,
+  } = parsed.data
+
+  const duration = SERVICE_DURATIONS[service_id]
+  if (!duration) {
+    res.status(400).json({ error: 'Invalid service_id' })
+    return
+  }
+
+  const end_time = addMinutesToTime(start_time, duration * 60)
+
+  // Step 1: Pre-check slot availability (cheap SELECT, prevents charging
+  // for an obviously unavailable slot).
+  const available = await getAvailableSlots(date, service_id)
+  if (!available.some(s => s.start === start_time)) {
+    res.status(409).json({ error: 'This time slot is no longer available' })
+    return
+  }
+
+  // Generate the booking id up front so we can pass it to Square as
+  // reference_id. This gives Square dashboard ↔ bookings table a clean 1:1
+  // lookup (no truncation, no timestamp collisions).
+  const bookingId = randomUUID()
+
+  // Step 2: Charge via Square. After this line the customer's card is debited.
+  // Square API field length limits:
+  //   - reference_id: max 40 chars  (UUID is 36, fits cleanly)
+  //   - note:         max 500 chars → defensive slice in case dog_name is huge
+  const note = `Deposit for ${dog_name} on ${date} ${start_time}`.slice(0, 500)
+  let squareResult
+  try {
+    squareResult = await createSquarePayment({
+      sourceId: source_id,
+      amountCents: config.DEPOSIT_AMOUNT_CENTS,
+      idempotencyKey: idempotency_key,
+      referenceId: bookingId,
+      note,
+    })
+  } catch (err) {
+    console.error('[with-deposit] Square charge failed:', err)
+    res.status(402).json({
+      error: 'Payment failed',
+      detail: err instanceof Error ? err.message : String(err),
+    })
+    return
+  }
+
+  // Step 3: Insert booking row. This is the "point of no return" for the
+  // atomic flow — if this fails we must refund the Square charge.
+  // The id is explicitly set to match the Square reference_id.
+  const { data: booking, error: bookingErr } = await supabaseAdmin
+    .from('bookings')
+    .insert({
+      id: bookingId,
+      user_id: req.user!.id,
+      service_id,
+      date,
+      start_time,
+      end_time,
+      dog_name,
+      dog_breed: dog_breed ?? null,
+      address,
+      notes: notes ?? null,
+      status: 'confirmed',
+      deposit_status: 'paid',
+      deposit_paid_at: new Date().toISOString(),
+    })
+    .select()
+    .single()
+
+  // Step 3b: Charge succeeded but booking insert failed → refund.
+  if (bookingErr || !booking) {
+    console.error('[with-deposit] CRITICAL: charge succeeded but booking insert failed', {
+      squarePaymentId: squareResult.squarePaymentId,
+      userId: req.user!.id,
+      error: bookingErr,
+    })
+
+    try {
+      await refundSquarePayment(squareResult.squarePaymentId, randomUUID())
+      res.status(409).json({
+        error: 'That slot was just taken. Your payment has been refunded.',
+      })
+    } catch (refundErr) {
+      console.error('[with-deposit] DOUBLE CRITICAL: refund also failed', {
+        squarePaymentId: squareResult.squarePaymentId,
+        refundErr,
+      })
+
+      // Fire-and-forget: notify Larry for manual intervention
+      notifyLarryCriticalError({
+        subject: 'URGENT: Square charge succeeded, booking failed, refund failed',
+        details: {
+          squarePaymentId: squareResult.squarePaymentId,
+          userId: req.user!.id,
+          userEmail: req.user!.email,
+          bookingError: String(bookingErr),
+          refundError: refundErr instanceof Error ? refundErr.message : String(refundErr),
+          amountCents: config.DEPOSIT_AMOUNT_CENTS,
+        },
+      }).catch(e => console.error('Failed to notify Larry:', e))
+
+      res.status(500).json({
+        error: 'Payment processed but booking failed. Our team has been notified for a manual refund.',
+      })
+    }
+    return
+  }
+
+  // Step 4: Insert payments audit row. Non-fatal — booking and charge both
+  // succeeded, this row is just for reporting.
+  const { error: paymentErr } = await supabaseAdmin.from('payments').insert({
+    booking_id: booking.id,
+    type: 'deposit',
+    amount_cents: config.DEPOSIT_AMOUNT_CENTS,
+    currency: 'USD',
+    status: 'paid',
+    square_payment_id: squareResult.squarePaymentId,
+    square_receipt_url: squareResult.receiptUrl,
+    paid_at: new Date().toISOString(),
+  })
+  if (paymentErr) {
+    console.error('[with-deposit] payment audit row insert failed:', paymentErr)
+  }
+
+  // Step 5: Await calendar event creation (same pattern as POST /).
+  const clientEmail = req.user!.email
+  try {
+    const eventId = await createCalendarEvent(booking, clientEmail)
+    if (eventId) {
+      await supabaseAdmin.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id)
+      booking.google_event_id = eventId
+    }
+  } catch (err) {
+    console.error('[with-deposit] Calendar event failed:', err)
+  }
+
+  // Step 6: Fire-and-forget notifications
+  sendBookingConfirmation(booking, clientEmail).catch(err => console.error('Confirmation email failed:', err))
+  notifyDorisNewBooking(booking, clientEmail).catch(err => console.error('Doris email failed:', err))
+  notifyDorisDepositPaid(booking, config.DEPOSIT_AMOUNT_CENTS, squareResult.receiptUrl)
+    .catch(err => console.error('Doris deposit email failed:', err))
+  notifyDorisSms(booking).catch(err => console.error('Doris SMS failed:', err))
+  scheduleReminders(booking, clientEmail).catch(err => console.error('Schedule reminders failed:', err))
+
+  res.status(201).json({
+    ...booking,
+    deposit_receipt_url: squareResult.receiptUrl,
+  })
 })
 
 // Get bookings (user sees own, admin sees all)

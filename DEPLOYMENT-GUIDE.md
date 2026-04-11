@@ -232,21 +232,121 @@ DORIS_PHONE=+19162871878
 
 ---
 
-## 四、Stripe 支付配置（暂跳过）
+## 四、Square 押金支付配置
 
-Stripe 支付功能暂未实现。上线时需要：
+### 设计概览
 
-1. 注册 Stripe 账号 https://dashboard.stripe.com/register
-2. 获取 API keys（先用 Test Mode）
-3. 在 backend/.env 添加：
-   ```env
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-4. 在 frontend/.env.local 添加：
-   ```env
-   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
-   ```
+- **强制押金**：开启后，所有新预约都必须先付 `$20` 不退款押金才能下单。走的是 Square Web Payments SDK（卡号输入托管在 Square iframe 里，我们的服务器拿到的只是一次性 `source_id`，从不接触卡号，合规上属于 PCI SAQ-A）
+- **Feature flag**：后端 `DEPOSIT_REQUIRED` + 前端 `VITE_DEPOSIT_REQUIRED` 必须**同时翻转**
+  - `false / false` → 老逻辑：无需付款，直接下单
+  - `true / true` → 新逻辑：先 tokenize → charge → insert booking
+  - `true / false`（前端没改） → 前端走老接口，后端 503 守卫 "Deposit required. Use /api/bookings/with-deposit" 硬挡
+  - `false / true`（后端没改） → 前端让用户输卡号付款，后端 404 "Square not configured or feature disabled"
+  - 这种"双锁"是故意的：任何一边配置漂移都会立刻暴露，不会出现 Doris 以为收到了押金但实际没收到的情况
+- **原子付款流**：pre-check slot → Square charge → insert booking（行 id 用预生成 UUID 作为 Square `reference_id`）→ 如 insert 失败则 refund → 如 refund 也失败发 `LARRY_ALERT_EMAIL` 警报
+- **押金状态持久化**：`bookings.deposit_status ∈ {'none','paid','refunded'}` + `bookings.deposit_paid_at` + 独立的 `payments` 表做对账
+
+### 架构说明：谁管 Square
+
+| 角色 | 管理内容 |
+|------|---------|
+| **Larry（开发期）** | 用自己的 Square sandbox 账号开发、联调 |
+| **Doris（生产期）** | 唯一需要做的：把她 Square 账号里的 **Location ID**、**Application ID**（Production）、**Access Token**（Production）发给 Larry |
+
+> 上线前 Doris 已经有 Square 账号（她本来就用 Square 收现场刷卡付款），Larry 需要从她的 Square Developer Dashboard 里取 3 个凭证。
+
+### 让 Doris 创建 Square Application（Production 凭证）
+
+Square 账号里原生的"收现场付款"不产生 API 凭证——我们需要在 Developer Dashboard 新建一个 Application：
+
+1. Doris 用她的 Square 账号（同一个 Seller Account）登录 https://developer.squareup.com/apps
+2. 点 **+ Create your first application**（或右上角 **+**）
+3. Application name 填 `Dogs in Fashion Website`，选 **I'm building for myself**，提交
+4. 进 App 页面，右上角环境切到 **Production**（默认打开是 Sandbox，容易踩坑）
+5. **Credentials** 标签：
+   - 记录 **Production Application ID**（`sq0idp-` 开头）
+   - 记录 **Production Access Token**（`EAAA` 开头，这是生产 token，**严禁进 git、严禁发群、只进 Railway 环境变量**）
+6. **Locations** 标签：
+   - 找到 Doris 已有的那个生产 location（通常就是她店面地址），记录 **Production Location ID**（`L` 开头的 26 位字符）
+
+> ⚠️ 坑点：Application ID 和 Access Token 分 Sandbox / Production 两套，**Location ID 也分两套**。切 tab 的时候务必确认右上角环境是 Production。
+
+### 后端 env（Railway 生产环境变量）
+
+```env
+# Square 强制押金（先以 false 部署上线，再翻 true）
+DEPOSIT_REQUIRED=false
+DEPOSIT_AMOUNT_CENTS=2000
+SQUARE_ACCESS_TOKEN=EAAA...              # Doris 账号 Production Access Token
+SQUARE_APPLICATION_ID=sq0idp-...         # Doris 账号 Production Application ID
+SQUARE_LOCATION_ID=L...                  # Doris 账号 Production Location ID
+SQUARE_ENVIRONMENT=production            # 关键：sandbox / production 二选一
+LARRY_ALERT_EMAIL=<your-dev-email>   # 付款成功但 booking 写入失败 + refund 也失败时的紧急告警
+```
+
+### 前端 env（Vercel/Railway 前端环境变量）
+
+```env
+VITE_DEPOSIT_REQUIRED=false
+VITE_DEPOSIT_AMOUNT_CENTS=2000
+VITE_SQUARE_APPLICATION_ID=sq0idp-...    # 和后端同一个（Production Application ID）
+VITE_SQUARE_LOCATION_ID=L...             # 和后端同一个（Production Location ID）
+VITE_SQUARE_ENVIRONMENT=production       # 决定加载 web.squarecdn.com 还是 sandbox.web.squarecdn.com
+```
+
+> 前端只放 Application ID + Location ID，**绝不要放 Access Token**。Access Token 只属于后端，泄漏等于别人能代表 Doris 收款。
+
+### 数据库迁移
+
+首次上线前，在 **Supabase 生产项目**的 SQL Editor 跑一次：
+
+```
+/Users/dev/dogsinfashion/2026-04-10-payments.sql
+```
+
+这个 SQL 脚本是幂等的（`if not exists` + `do $ ... $`），重复执行不会报错。它会：
+- 在 `bookings` 表加 `deposit_status` 和 `deposit_paid_at` 两列
+- 新建 `payments` 表 + RLS 策略（用户只能看自己的付款记录，admin 通过 service role 绕 RLS）
+
+### 上线流程（先影子部署，再翻 flag）
+
+1. **代码上线但 flag 关闭**：把两边 `DEPOSIT_REQUIRED` / `VITE_DEPOSIT_REQUIRED` 都设成 `false`，部署一次，确认老的下单流程完全没变化（回归测试）
+2. **在 Supabase 生产库跑迁移 SQL**
+3. **小范围验证**：把 Doris 的手机设成只有她能看见网站的方式（比如临时改成 `VITE_DEPOSIT_REQUIRED=true` 但不通知客户），自己下一单真实付款 + 真实退款，确认 Square Dashboard 能看到 $20 charge，`bookings.deposit_status='paid'`，邮件全部到位
+4. **正式翻 flag**：前后端同时改成 `true`，重新部署，通知 Doris 新规则已生效
+
+### 紧急回滚
+
+发现问题后立即：
+1. 前后端环境变量同时改回 `DEPOSIT_REQUIRED=false` / `VITE_DEPOSIT_REQUIRED=false`
+2. 触发一次 Railway/Vercel 重部署
+3. 已经收到的押金在 Square Dashboard 里可以手动逐笔退款
+
+**注意**：已经 `deposit_status='paid'` 的 bookings 不会自动改回 `'none'`——如果要完整回滚这些记录，需要在 Square Dashboard 退款后，再手动 update 数据库行（或直接取消对应 booking，走正常的 cancel 流程，押金会自动退——见下方）
+
+### 取消预约时的押金处理
+
+**当前策略：不退款**。客户或 Doris 取消 booking 时，`deposit_status='paid'` 保持不变，只把 `bookings.status` 改成 `'cancelled'`。取消邮件里会带一段说明告诉客户押金不退。
+
+> 未来如果要区分"24 小时前取消免押金 / 之后不退"之类的策略，是改 `PATCH /api/bookings/:id/status` 路由里的业务逻辑，不是改 Square 配置。
+
+### 紧急告警邮件 `LARRY_ALERT_EMAIL`
+
+只有一种场景会触发：**Square 已成功扣款 → 插 bookings 行失败 → refund 调用也失败**。这意味着客户被扣了钱但系统没记录也退不回去，必须人工介入。Larry 收到邮件后应立刻：
+1. 去 Square Dashboard 手动退款
+2. 查 Railway 日志定位 insert 失败原因
+
+正常情况下这封邮件一辈子都不应该收到。如果收到就说明有严重 bug 或 Supabase 挂了。
+
+### 验证方式
+
+**Sandbox 测试卡**（只在 `SQUARE_ENVIRONMENT=sandbox` 时有效）：
+- 成功：`4111 1111 1111 1111`
+- Declined：`4000 0000 0000 0002`
+- CVV 错误：`4000 0000 0000 0010`
+- 过期日期任意未来值（`12/26` 之类），CVV 任意 3 位，ZIP 任意 5 位
+
+**生产验证**：用自己的真实卡下一单 $20，确认 Square Dashboard `Transactions` 里看到 `$20.00 CAPTURED`，`Reference ID` 就是 `bookings.id`（一个 UUID）。验证完立刻去 Dashboard 退款，避免真花这 $20。
 
 ---
 
@@ -302,6 +402,15 @@ TWILIO_ACCOUNT_SID=<见 Twilio Console>
 TWILIO_AUTH_TOKEN=<见 Twilio Console>
 TWILIO_PHONE_NUMBER=<见 Twilio Console>
 DORIS_PHONE=+19162871878
+
+# Square 押金（先以 false 上线，再翻 true，翻 flag 时前端也要同步改）
+DEPOSIT_REQUIRED=false
+DEPOSIT_AMOUNT_CENTS=2000
+SQUARE_ACCESS_TOKEN=EAAA...              # Doris 账号 Production Access Token（严禁泄漏）
+SQUARE_APPLICATION_ID=sq0idp-...
+SQUARE_LOCATION_ID=L...
+SQUARE_ENVIRONMENT=production
+LARRY_ALERT_EMAIL=<your-dev-email>
 ```
 
 > Supabase Custom SMTP 的配置**不在 .env 里**，它存在 Supabase Dashboard → Auth → SMTP Settings 里。如果需要改（比如轮换 Resend API Key），要同时改这两个地方。
@@ -328,6 +437,15 @@ DORIS_PHONE=+19162871878
 - [ ] 创建真实预约验证：booking 确认邮件 ✓ / Doris 通知邮件 ✓ / 日历事件 ✓
 - [ ] 在登录页点 "Forgot password" 验证 auth 邮件：样式是 Dogs in Fashion 自定义模板 ✓
 
+### Square 押金上线（独立于主应用上线，可以后续启用）
+- [ ] Doris 在 https://developer.squareup.com/apps 创建 `Dogs in Fashion Website` App
+- [ ] 把环境切到 **Production**，记下 Application ID / Access Token / Location ID
+- [ ] Larry 在 Railway 填入 7 个后端 Square 环境变量（`DEPOSIT_REQUIRED=false` 先保持关闭）
+- [ ] Larry 在前端托管平台填入 5 个 `VITE_SQUARE_*` 前端环境变量（`VITE_DEPOSIT_REQUIRED=false` 先保持关闭）
+- [ ] 在 Supabase 生产项目跑 `2026-04-10-payments.sql` 迁移
+- [ ] 先以 flag=off 部署一次，回归测试老的下单流程完全没变化
+- [ ] 用自己真实卡做一次 $20 生产试单，确认 Square Dashboard + `bookings` + `payments` 三端一致 → 立刻退款
+- [ ] 正式翻 flag：前后端同时改 `DEPOSIT_REQUIRED / VITE_DEPOSIT_REQUIRED` 为 `true` → 重新部署 → 通知 Doris
+
 ### 待办（不阻塞上线）
 - [ ] 完成 Twilio A2P 10DLC 注册 → 取消注释 `TWILIO_*` 环境变量 → 填入 `DORIS_PHONE`
-- [ ] （可选）配置 Stripe 支付

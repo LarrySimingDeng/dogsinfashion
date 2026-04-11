@@ -29,3 +29,6 @@ backend/package-lock.json
 # Build output
 frontend/dist
 backend/dist
+
+# Local agent handover notes (may contain personal identifiers)
+TESTING_AGENT_PROMPT.md

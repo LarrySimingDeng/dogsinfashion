@@ -1,14 +1,25 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Check, ArrowLeft, ArrowRight, Calendar } from 'lucide-react'
+import { Check, ArrowLeft, ArrowRight, Calendar, Lock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { services, getServiceById, formatDuration } from '../data/services'
 
 const sizes = ['small', 'medium', 'large'] as const
 import SlotPicker from '../components/SlotPicker'
+import {
+  SquarePaymentForm,
+  type SquarePaymentFormHandle,
+} from '../components/SquarePaymentForm'
 import { apiFetch } from '../lib/api'
 
 const STEPS = ['Service', 'Date & Time', 'Details', 'Confirm']
+
+// Feature flag: string compare on purpose — Boolean("false") === true.
+const DEPOSIT_REQUIRED = import.meta.env.VITE_DEPOSIT_REQUIRED === 'true'
+const DEPOSIT_AMOUNT_CENTS = Number(
+  import.meta.env.VITE_DEPOSIT_AMOUNT_CENTS || '2000',
+)
+const DEPOSIT_AMOUNT_DISPLAY = `$${(DEPOSIT_AMOUNT_CENTS / 100).toFixed(0)}`
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams()
@@ -26,6 +37,10 @@ export default function BookingPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  // Square deposit state — only meaningful when DEPOSIT_REQUIRED=true.
+  const squareFormRef = useRef<SquarePaymentFormHandle>(null)
+  const [paymentReady, setPaymentReady] = useState(!DEPOSIT_REQUIRED)
+
   const selectedService = getServiceById(serviceId)
 
   const canNext = () => {
@@ -39,18 +54,43 @@ export default function BookingPage() {
     setSubmitting(true)
     setError('')
     try {
-      await apiFetch('/api/bookings', {
-        method: 'POST',
-        body: JSON.stringify({
-          service_id: serviceId,
-          date,
-          start_time: time,
-          dog_name: dogName,
-          dog_breed: dogBreed || undefined,
-          address,
-          notes: notes || undefined,
-        }),
-      })
+      if (DEPOSIT_REQUIRED) {
+        if (!squareFormRef.current) {
+          throw new Error('Payment form is not ready yet')
+        }
+        // 1) Tokenize the card on the client — Square never touches our server
+        //    until we hand them a single-use source_id.
+        const sourceId = await squareFormRef.current.tokenize()
+        // 2) Fresh idempotency key per attempt so retries don't double-charge.
+        const idempotencyKey = crypto.randomUUID()
+        await apiFetch('/api/bookings/with-deposit', {
+          method: 'POST',
+          body: JSON.stringify({
+            service_id: serviceId,
+            date,
+            start_time: time,
+            dog_name: dogName,
+            dog_breed: dogBreed || undefined,
+            address,
+            notes: notes || undefined,
+            source_id: sourceId,
+            idempotency_key: idempotencyKey,
+          }),
+        })
+      } else {
+        await apiFetch('/api/bookings', {
+          method: 'POST',
+          body: JSON.stringify({
+            service_id: serviceId,
+            date,
+            start_time: time,
+            dog_name: dogName,
+            dog_breed: dogBreed || undefined,
+            address,
+            notes: notes || undefined,
+          }),
+        })
+      }
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create booking')
@@ -298,6 +338,30 @@ export default function BookingPage() {
                   </div>
                 )}
               </div>
+
+              {DEPOSIT_REQUIRED && (
+                <div className="mt-6 rounded-2xl border-2 border-sky bg-cream p-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 font-display text-lg font-bold text-warm-dark">
+                      <Lock className="h-4 w-4 text-sage" />
+                      Secure Deposit
+                    </h3>
+                    <span className="font-display text-xl font-bold text-secondary">
+                      {DEPOSIT_AMOUNT_DISPLAY}
+                    </span>
+                  </div>
+                  <p className="mb-4 text-xs leading-relaxed text-warm-gray">
+                    A non-refundable {DEPOSIT_AMOUNT_DISPLAY} deposit holds your slot.
+                    The remaining balance is due at your appointment. Card details
+                    are handled securely by Square — we never see them.
+                  </p>
+                  <SquarePaymentForm
+                    ref={squareFormRef}
+                    onReady={() => setPaymentReady(true)}
+                    onError={msg => setError(msg)}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -328,11 +392,17 @@ export default function BookingPage() {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || (DEPOSIT_REQUIRED && !paymentReady)}
                 className="inline-flex items-center gap-2 rounded-full bg-secondary px-7 py-3 font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-glow disabled:opacity-50"
               >
                 <Calendar className="h-4 w-4" />
-                {submitting ? 'Booking...' : 'Confirm Booking'}
+                {submitting
+                  ? DEPOSIT_REQUIRED
+                    ? 'Processing payment…'
+                    : 'Booking…'
+                  : DEPOSIT_REQUIRED
+                    ? `Pay ${DEPOSIT_AMOUNT_DISPLAY} & Confirm Booking`
+                    : 'Confirm Booking'}
               </button>
             )}
           </div>

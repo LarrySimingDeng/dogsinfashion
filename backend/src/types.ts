@@ -23,6 +23,8 @@ export interface Booking {
   notes: string | null
   status: 'confirmed' | 'completed' | 'cancelled'
   google_event_id: string | null
+  deposit_status: 'none' | 'paid' | 'refunded'
+  deposit_paid_at: string | null
   created_at: string
   updated_at: string
 }

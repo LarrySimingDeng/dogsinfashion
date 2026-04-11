@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Dog, Plus, RefreshCw } from 'lucide-react'
+import { Calendar, Clock, MapPin, Dog, Plus, RefreshCw, DollarSign } from 'lucide-react'
 import DogLoader from '../components/DogLoader'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
@@ -19,6 +19,7 @@ interface Booking {
   address: string
   notes: string | null
   status: 'confirmed' | 'completed' | 'cancelled'
+  deposit_status?: 'none' | 'paid' | 'refunded'
   created_at: string
 }
 
@@ -113,9 +114,23 @@ export default function MyBookingsPage() {
 
             {/* Right column: badge + reschedule */}
             <div className="flex shrink-0 flex-col items-end justify-between">
-              <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[booking.status]}`}>
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[booking.status]}`}>
+                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                </span>
+                {booking.deposit_status === 'paid' && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sage-light px-2.5 py-0.5 text-[10px] font-bold text-sage">
+                    <DollarSign className="h-3 w-3" />
+                    Deposit Paid
+                  </span>
+                )}
+                {booking.deposit_status === 'refunded' && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky/40 px-2.5 py-0.5 text-[10px] font-bold text-warm-gray">
+                    <DollarSign className="h-3 w-3" />
+                    Deposit Refunded
+                  </span>
+                )}
+              </div>
               {showReschedule && (
                 <button
                   onClick={() => setRescheduleBooking(booking)}

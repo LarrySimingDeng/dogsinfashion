@@ -123,6 +123,69 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
   }
 }
 
+export async function notifyDorisDepositPaid(
+  booking: Booking,
+  amountCents: number,
+  receiptUrl: string | null,
+): Promise<void> {
+  if (!resend) return
+
+  const serviceName = serviceDisplayName(booking.service_id)
+  const amountDollars = (amountCents / 100).toFixed(2)
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: config.DORIS_EMAIL,
+      subject: `Deposit Received: $${amountDollars} — ${booking.dog_name}`,
+      html: `
+        <div style="font-family:Arial,sans-serif">
+          <h2 style="color:#5BA4D9">Deposit Received</h2>
+          <p>A $${amountDollars} deposit has been paid for this booking:</p>
+          <p><strong>Service:</strong> ${serviceName}</p>
+          <p><strong>Dog:</strong> ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}</p>
+          <p><strong>Date:</strong> ${formatBookingDate(booking)}</p>
+          <p><strong>Time:</strong> ${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</p>
+          ${receiptUrl ? `<p><a href="${receiptUrl}">View Square receipt</a></p>` : ''}
+          <p style="color:#7A7570;font-size:13px;margin-top:16px">This deposit is non-refundable per policy. Balance due at grooming.</p>
+        </div>
+      `,
+    })
+    if (error) throw error
+  } catch (err) {
+    console.error('Failed to notify Doris about deposit:', err)
+  }
+}
+
+export async function notifyLarryCriticalError(params: {
+  subject: string
+  details: Record<string, unknown>
+}): Promise<void> {
+  if (!resend) return
+  if (!config.LARRY_ALERT_EMAIL) {
+    console.error('LARRY_ALERT_EMAIL not configured, skipping critical error notification')
+    return
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: config.LARRY_ALERT_EMAIL,
+      subject: `[DogsInFashion ALERT] ${params.subject}`,
+      html: `
+        <div style="font-family:monospace">
+          <h2 style="color:#B84A4A">${params.subject}</h2>
+          <p>This is an automated critical error notification from the Dogs in Fashion backend.</p>
+          <pre style="background:#f5f5f5;padding:12px;border-radius:4px;overflow-x:auto">${JSON.stringify(params.details, null, 2)}</pre>
+          <p>Please investigate and take manual action if necessary.</p>
+        </div>
+      `,
+    })
+  } catch (err) {
+    console.error('Failed to send critical error notification:', err)
+  }
+}
+
 export async function notifyDorisNewBooking(booking: Booking, clientEmail: string): Promise<void> {
   if (!resend) return
 
@@ -269,6 +332,13 @@ export async function sendCancellationNotification(
 
   const serviceName = serviceDisplayName(booking.service_id)
 
+  // Non-refundable deposit notice (only shown if a deposit was actually paid)
+  const depositNotice = booking.deposit_status === 'paid' ? `
+    <div style="background:#FFF4E5;border-left:4px solid #E8975E;padding:12px 16px;margin:16px 0;border-radius:4px">
+      <strong>About your deposit:</strong> Per our cancellation policy, the deposit paid for this booking is non-refundable. If you have questions, please contact Doris directly.
+    </div>
+  ` : ''
+
   try {
     // sequence=999 ensures this CANCEL overrides any prior invite/update
     const icsContent = generateIcs(booking, clientEmail, { method: 'CANCEL', sequence: 999 })
@@ -288,6 +358,7 @@ export async function sendCancellationNotification(
             <tr><td style="padding:8px;color:#7A7570">Date</td><td style="padding:8px;font-weight:bold">${formatBookingDate(booking)}</td></tr>
             <tr><td style="padding:8px;color:#7A7570">Time</td><td style="padding:8px;font-weight:bold">${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</td></tr>
           </table>
+          ${depositNotice}
           <p>If you'd like to reschedule or have any questions, please contact Doris directly or <a href="https://www.dogsinfashion.com/book">book a new appointment</a>.</p>
           <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — dogsinfashionca@gmail.com</p>
         </div>

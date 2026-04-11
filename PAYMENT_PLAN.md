@@ -140,49 +140,46 @@ alter table bookings add column deposit_paid_at timestamptz;
 
 ### 3.2 新文件 `backend/src/services/square.ts`
 
-**依赖**: `cd backend && npm install square`
-**版本**: 先跑 `npm view square version` 查当前 latest，pin 主版本（比如 `^40.0.0`，实际以查到的为准）
+**依赖**: `cd backend && npm install square@^44.0.0`
+**当前版本**: `44.0.1`（2026-04-10 实施时查到的 latest）。下面的代码对照 `node_modules/square/api/**/*.d.ts` 的 TypeScript 定义校对过，API 形状对齐 v44.x 实际 SDK。
 
-> **⚠️ 重要 — 给实施 AI 的警告**
->
-> 下面这段代码（`SquareClient`、`SquareEnvironment` 的 import 形状、`client.payments.create()` 的参数结构、`client.refunds.refundPayment()` 的方法名）是基于对 Square SDK v40+ 的**推测**。**不同 SDK 主版本之间这些 API 改过很多次**，比如：
-> - v30 之前叫 `Client` 而不是 `SquareClient`
-> - `Environment` 枚举路径变过
-> - `paymentsApi.createPayment()` vs `payments.create()` 的方法组织变过
-> - `amountMoney.amount` 曾经是 `number` 现在是 `BigInt`
->
-> **实施前必做**:
-> 1. 跑 `cd backend && npm view square version` 查当前 latest 版本
-> 2. 打开 https://developer.squareup.com/docs/sdks/nodejs 读官方文档，对照确认：
->    - `SquareClient` / `Client` 类名
->    - `SquareEnvironment` / `Environment` 枚举的 import 路径
->    - `payments.create()` 的具体参数结构
->    - `refunds.refundPayment()` 的方法名和参数
->    - `payment.receiptUrl` 响应字段名（可能叫 `receipt_url` 或 camelCase）
-> 3. 如果 SDK 是 v40+，下面代码大概率可以直接用；如果是更老或更新版本，按官方文档调整形状（但整体结构 — 错误处理、BigInt、autocomplete — 保持不变）
-> 4. 安装后跑 `npx tsc --noEmit` 检查类型错误
->
-> 下面的代码是**骨架和意图**，不是保证能直接跑的最终代码。
+**v44 SDK 的关键事实**（都从 `.d.ts` 源文件确认过）:
+- `import { SquareClient, SquareEnvironment, SquareError } from 'square'`
+- `SquareEnvironment` 不再是真正的 enum，是一个 const 对象，`.Production` / `.Sandbox` 是 URL 字符串常量（使用上照样写 `SquareEnvironment.Sandbox`）
+- `new SquareClient({ token, environment })` 构造器
+- `client.payments.create({ sourceId, idempotencyKey, amountMoney: { amount: BigInt, currency }, locationId, autocomplete, referenceId, note })` — 所有字段 camelCase
+- `client.refunds.refundPayment({ idempotencyKey, paymentId, amountMoney, reason })`
+- 返回类型是 `HttpResponsePromise<T> extends Promise<T>`，所以 `await` 直接拿到 parsed response，不需要 `.withRawResponse()`
+- Response shape: `CreatePaymentResponse.payment?: Payment`，`Payment` 上有 `.id` / `.status` / `.receiptUrl` / `.orderId` / `.referenceId` / `.amountMoney`（全 camelCase）
+- 错误抛出 `SquareError` 实例，具有 `.errors: BodyError[]`（每个 `BodyError` 有 `.detail` / `.code` / `.category` / `.field`）+ `.message` + `.statusCode` + `.body` + `.rawResponse`
+
+**升级主版本时必做**: 跑 `npm view square version` 看是否到了 v45+。如果是，对照 `node_modules/square/api/resources/payments/client/Client.d.ts` 和 `api/resources/refunds/client/Client.d.ts` 重新校对字段名（主版本之间不保证兼容）。之后跑 `npx tsc --noEmit`。
 
 ```ts
 import { config } from '../config.js'
-import type { Booking } from '../types.js'
 
-// 动态 import 避免 flag=off 时加载 SDK
-let squareClient: any = null
+// Type-only import: 真正的 SDK 只在第一次调用时动态 import，
+// flag=off 部署永远不会加载 square 包。
+type SquareClient = import('square').SquareClient
 
-async function getSquareClient() {
-  if (squareClient) return squareClient
+let clientPromise: Promise<SquareClient> | null = null
+
+async function getSquareClient(): Promise<SquareClient | null> {
   if (!isSquareConfigured()) return null
+  if (clientPromise) return clientPromise
 
-  const { SquareClient, SquareEnvironment } = await import('square')
-  squareClient = new SquareClient({
-    token: config.SQUARE_ACCESS_TOKEN!,
-    environment: config.SQUARE_ENVIRONMENT === 'production'
-      ? SquareEnvironment.Production
-      : SquareEnvironment.Sandbox,
-  })
-  return squareClient
+  clientPromise = (async () => {
+    const { SquareClient, SquareEnvironment } = await import('square')
+    return new SquareClient({
+      token: config.SQUARE_ACCESS_TOKEN!,
+      environment:
+        config.SQUARE_ENVIRONMENT === 'production'
+          ? SquareEnvironment.Production
+          : SquareEnvironment.Sandbox,
+    })
+  })()
+
+  return clientPromise
 }
 
 export function isSquareConfigured(): boolean {
@@ -194,11 +191,28 @@ export function isSquareConfigured(): boolean {
   )
 }
 
+/**
+ * Extract a human-readable error message from a Square SDK failure.
+ * v44 throws `SquareError` instances with `.errors[]` of `{ category, code, detail }`.
+ * Duck-typed so we don't need a static import of the SquareError class
+ * (which would defeat dynamic import on flag=off deploys).
+ */
+function extractSquareErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const e = err as { errors?: Array<{ detail?: string; code?: string }>; message?: string }
+    const first = e.errors?.[0]
+    if (first?.detail) return first.detail
+    if (first?.code) return first.code
+    if (e.message) return e.message
+  }
+  return 'Unknown Square error'
+}
+
 export async function createSquarePayment(params: {
   sourceId: string
   amountCents: number
   idempotencyKey: string
-  referenceId: string  // 我们自己生成的临时 ref，因为 booking id 还不存在
+  referenceId: string  // 调用方传预生成的 booking id，用作 Square ↔ DB 的 1:1 对账标识
   note: string
 }): Promise<{
   squarePaymentId: string
@@ -213,12 +227,13 @@ export async function createSquarePayment(params: {
       sourceId: params.sourceId,
       idempotencyKey: params.idempotencyKey,
       amountMoney: {
-        // ⚠️ 必须是 BigInt！传 Number 会运行时报错
+        // ⚠️ Must be BigInt. Passing a Number throws at runtime.
         amount: BigInt(params.amountCents),
         currency: 'USD',
       },
       locationId: config.SQUARE_LOCATION_ID!,
-      autocomplete: true,  // 关键：同步完成，不需要 CAPTURE 第二步
+      // Synchronous capture — no separate CAPTURE step needed.
+      autocomplete: true,
       referenceId: params.referenceId,
       note: params.note,
     })
@@ -233,10 +248,8 @@ export async function createSquarePayment(params: {
       receiptUrl: payment.receiptUrl ?? null,
       orderId: payment.orderId ?? null,
     }
-  } catch (err: any) {
-    // Square SDK 错误格式：errors[0].detail
-    const detail = err?.errors?.[0]?.detail ?? err?.message ?? 'Payment failed'
-    throw new Error(detail)
+  } catch (err) {
+    throw new Error(extractSquareErrorMessage(err))
   }
 }
 
@@ -263,12 +276,16 @@ export async function refundSquarePayment(
       throw new Error('Refund response missing id')
     }
     return { refundId: refund.id }
-  } catch (err: any) {
-    const detail = err?.errors?.[0]?.detail ?? err?.message ?? 'Refund failed'
-    throw new Error(detail)
+  } catch (err) {
+    throw new Error(extractSquareErrorMessage(err))
   }
 }
 ```
+
+**实施时的 3 处小改进**（2026-04-10 确认 v44 形状后应用）:
+1. `squareClient` 缓存从单例 `any` 变量改成 `Promise<SquareClient>`，避免并发首次调用时重复动态 import
+2. 类型从 `any` 改成 `import('square').SquareClient` 的 **type-only import**，保留 flag-off 惰性加载的同时拿回 TS 类型提示
+3. 错误处理抽成独立 `extractSquareErrorMessage()` helper，3 级 fallback（`detail` → `code` → `message`）而不是 2 级
 
 ### 3.3 `backend/src/routes/bookings.ts` — 新增 atomic endpoint + 旧端点守卫
 
@@ -287,6 +304,7 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
 
 **b) 新增 `POST /with-deposit`** 放在 `POST /` 之后：
 ```ts
+import { randomUUID } from 'crypto'
 import { createSquarePayment, refundSquarePayment, isSquareConfigured } from '../services/square.js'
 import { notifyDorisDepositPaid, notifyLarryCriticalError } from '../services/email.js'
 
@@ -337,26 +355,39 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     return
   }
 
+  // 预先生成 booking id，后面把它同时传给 Square 当 reference_id 和 insert 时显式当 id。
+  // 这样 Square dashboard ↔ bookings 表是干净的 1:1 对照（Doris 在 Square 后台看到
+  // 一笔付款，reference_id 就是完整的 booking id，可以直接反查）。
+  const bookingId = randomUUID()
+
   // 步骤 2: 调 Square charge（这一步之后客户的钱已经扣了）
+  // ⚠️ Square API 字段长度限制（实施时踩过的坑，2026-04-10）:
+  //   - reference_id: max 40 chars（UUID 是 36 字符，刚好塞得下）
+  //   - note:         max 500 chars → 防御 dog_name 超长
+  const note = `Deposit for ${dog_name} on ${date} ${start_time}`.slice(0, 500)
   let squareResult
   try {
     squareResult = await createSquarePayment({
       sourceId: source_id,
       amountCents: config.DEPOSIT_AMOUNT_CENTS,
       idempotencyKey: idempotency_key,
-      referenceId: `${req.user!.id}-${Date.now()}`,
-      note: `Deposit for ${dog_name} on ${date} ${start_time}`,
+      referenceId: bookingId,
+      note,
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('[with-deposit] Square charge failed:', err)
-    res.status(402).json({ error: 'Payment failed', detail: err.message })
+    res.status(402).json({
+      error: 'Payment failed',
+      detail: err instanceof Error ? err.message : String(err),
+    })
     return
   }
 
-  // 步骤 3: 插入 bookings 行
+  // 步骤 3: 插入 bookings 行（显式传 id，和 Square reference_id 对齐）
   const { data: booking, error: bookingErr } = await supabaseAdmin
     .from('bookings')
     .insert({
+      id: bookingId,
       user_id: req.user!.id,
       service_id,
       date,
@@ -382,11 +413,11 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     })
 
     try {
-      await refundSquarePayment(squareResult.squarePaymentId, crypto.randomUUID())
+      await refundSquarePayment(squareResult.squarePaymentId, randomUUID())
       res.status(409).json({
         error: 'That slot was just taken. Your payment has been refunded.',
       })
-    } catch (refundErr: any) {
+    } catch (refundErr) {
       console.error('[with-deposit] DOUBLE CRITICAL: refund also failed', {
         squarePaymentId: squareResult.squarePaymentId,
         refundErr,
@@ -399,7 +430,7 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
           userId: req.user!.id,
           userEmail: req.user!.email,
           bookingError: String(bookingErr),
-          refundError: String(refundErr),
+          refundError: refundErr instanceof Error ? refundErr.message : String(refundErr),
           amountCents: config.DEPOSIT_AMOUNT_CENTS,
         },
       }).catch(e => console.error('Failed to notify Larry:', e))
@@ -1011,10 +1042,11 @@ const DEPOSIT_REQUIRED = import.meta.env.VITE_DEPOSIT_REQUIRED === 'true'
 2. **BigInt 陷阱** — Square SDK 的 `amountMoney.amount` 必须是 BigInt，传 Number 运行时报错。`square.ts` 里注释清楚
 3. **React 18 Strict Mode 双执行** — Web SDK 加载必须先 check `window.Square`，否则报 "already initialized"
 4. **环境混用** — sandbox `VITE_*` + production `SQUARE_ACCESS_TOKEN` 会报 "token environment mismatch"。12 个变量作为一个 group 统一配置
-5. **Square npm 包版本** — pin 主版本（实际值以实施时 `npm view square version` 为准，不要用 `latest`）
-6. **Race window** — 一年估计 0-2 次。refund 兜底处理，极端情况下 refund 也失败 → 告警 Larry 人工处理
-7. **`profiles` 表假设（已避免）** — v1 plan 曾有"admin 查看 payments"的 RLS policy 依赖 `profiles` 表。新 plan 避开了这个依赖（admin 视图走后端 API，用 service role key）
-8. **定金政策**: 不退款是明确政策。客户必须在支付前就明确看到这个信息，避免纠纷
+5. **Square npm 包版本** — 当前 pin 到 `^44.0.0`（实施时 latest 是 `44.0.1`）。升级到 v45+ 时不保证兼容，必须对照 `.d.ts` 重新校对 API 形状并跑 `npx tsc --noEmit`
+6. **Square 字段长度陷阱** — `.d.ts` 里不写字段 max length，但 Square REST API 强制检查: `reference_id` ≤ 40 / `note` ≤ 500 / `statement_description_identifier` ≤ 20 / `idempotency_key` ≤ 45。TypeScript 抓不到，只能靠运行时 400。正解: `reference_id` 直接用 booking id（UUID 36 字符，刚好塞得下，同时建立 Square ↔ DB 的 1:1 对账关系）；凡是用户输入（dog_name 等）拼进 `note` 都要 `.slice(0, 500)`。错误姿势: 用 `${userId}-${Date.now()}` = 50 字符会炸（实施时踩过的坑）
+7. **Race window** — 一年估计 0-2 次。refund 兜底处理，极端情况下 refund 也失败 → 告警 Larry 人工处理
+8. **`profiles` 表假设（已避免）** — v1 plan 曾有"admin 查看 payments"的 RLS policy 依赖 `profiles` 表。新 plan 避开了这个依赖（admin 视图走后端 API，用 service role key）
+9. **定金政策**: 不退款是明确政策。客户必须在支付前就明确看到这个信息，避免纠纷
 
 ### PCI 合规
 使用 Web Payments SDK 的 iframe 字段 + 只传 token，卡号从不进入我们的服务器或前端 React state，保持最低等级 **SAQ-A 合规**。**绝对不要**把卡号存到 React state 或者手动读取 iframe 内容。

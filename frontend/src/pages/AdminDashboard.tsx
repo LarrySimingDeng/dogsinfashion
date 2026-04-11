@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Calendar, Clock, Settings, Filter, Bell, BarChart3, Dog, MapPin, RefreshCw } from 'lucide-react'
+import { Calendar, Clock, Settings, Filter, Bell, BarChart3, Dog, MapPin, RefreshCw, DollarSign } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
@@ -20,6 +20,7 @@ interface Booking {
   address: string
   notes: string | null
   status: 'confirmed' | 'completed' | 'cancelled'
+  deposit_status?: 'none' | 'paid' | 'refunded'
   created_at: string
 }
 
@@ -242,9 +243,23 @@ function BookingsTab() {
                     </div>
 
                     <div className="flex shrink-0 flex-col items-end justify-between">
-                      <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}>
-                        {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}>
+                          {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                        </span>
+                        {b.deposit_status === 'paid' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-sage-light px-2.5 py-0.5 text-[10px] font-bold text-sage">
+                            <DollarSign className="h-3 w-3" />
+                            Deposit Paid
+                          </span>
+                        )}
+                        {b.deposit_status === 'refunded' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-sky/40 px-2.5 py-0.5 text-[10px] font-bold text-warm-gray">
+                            <DollarSign className="h-3 w-3" />
+                            Deposit Refunded
+                          </span>
+                        )}
+                      </div>
                       {b.status === 'confirmed' && (
                         <div className="flex items-center gap-2">
                           <button

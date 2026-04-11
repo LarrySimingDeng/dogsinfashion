@@ -21,6 +21,17 @@ const envSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
   DORIS_PHONE: z.string().default('+19162871878'),
+
+  // Square Payments (optional + feature-flagged)
+  // ⚠️ DEPOSIT_REQUIRED must use enum+transform, NOT z.coerce.boolean()
+  // because Boolean("false") === true (any non-empty string is truthy).
+  DEPOSIT_REQUIRED: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
+  DEPOSIT_AMOUNT_CENTS: z.coerce.number().int().positive().default(2000),
+  SQUARE_ACCESS_TOKEN: z.string().optional(),
+  SQUARE_APPLICATION_ID: z.string().optional(),
+  SQUARE_LOCATION_ID: z.string().optional(),
+  SQUARE_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
+  LARRY_ALERT_EMAIL: z.string().email().optional(),
 })
 
 function loadConfig() {
