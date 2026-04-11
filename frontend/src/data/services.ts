@@ -92,7 +92,7 @@ export const services: ServiceTier[] = [
     size: 'medium',
     weightRange: '20–50 lbs',
     duration: 2,
-    price: 125,
+    price: 140,
     description:
       'The full spa experience for medium-sized pups. Everything they need to look and feel amazing, from nose to tail.',
     features: [

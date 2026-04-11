@@ -24,6 +24,6 @@ export const SERVICE_PRICES: Record<string, number> = {
   'bath-medium': 85,
   'bath-large': 110,
   'groom-small': 110,
-  'groom-medium': 125,
+  'groom-medium': 140,
   'groom-large': 185,
 }
