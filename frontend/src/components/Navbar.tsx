@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 const homeLinks = [
   { href: '#about', label: 'About' },
   { href: '#services', label: 'Services' },
+  { href: '#results', label: 'Results' },
   { href: '#areas', label: 'Areas' },
   { href: '#how', label: 'How It Works' },
 ]

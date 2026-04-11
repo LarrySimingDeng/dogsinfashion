@@ -3,6 +3,7 @@ import Hero from '../components/Hero'
 import About from '../components/About'
 import DogMarquee from '../components/DogMarquee'
 import Services from '../components/Services'
+import Results from '../components/Results'
 import Areas from '../components/Areas'
 import HowItWorks from '../components/HowItWorks'
 import BookingCTA from '../components/BookingCTA'
@@ -24,6 +25,7 @@ export default function HomePage() {
       <About />
       <DogMarquee />
       <Services onBookService={handleBookService} />
+      <Results />
       <Areas />
       <HowItWorks />
       <BookingCTA preselectedService={selectedService} />
