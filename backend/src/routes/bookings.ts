@@ -482,8 +482,8 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
     return
   }
 
-  // 24-hour advance notice check (skipped in development)
-  if (config.NODE_ENV !== 'development') {
+  // 24-hour advance notice check (skipped in development, and admins can reschedule anytime)
+  if (config.NODE_ENV !== 'development' && req.user!.role !== 'admin') {
     const existingStart = new Date(`${booking.date}T${booking.start_time}`)
     const hoursUntil = (existingStart.getTime() - Date.now()) / (1000 * 60 * 60)
     if (hoursUntil < 24) {
