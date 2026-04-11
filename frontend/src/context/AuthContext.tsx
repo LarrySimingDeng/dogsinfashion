@@ -8,6 +8,7 @@ interface Profile {
   phone: string | null
   avatar_url: string | null
   role: 'client' | 'admin'
+  default_address: string | null
 }
 
 interface AuthContextType {
@@ -17,6 +18,12 @@ interface AuthContextType {
   isLoading: boolean
   isRecovery: boolean
   clearRecovery: () => void
+  /**
+   * Re-fetch the current user's profile row from the database.
+   * Call this after any write that changes profile fields (e.g. default_address)
+   * so dependent pages see the new value without requiring a full page reload.
+   */
+  refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -27,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isRecovery: false,
   clearRecovery: () => {},
+  refreshProfile: async () => {},
   signOut: async () => {},
 })
 
@@ -79,13 +87,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [fetchProfile])
 
+  const refreshProfile = useCallback(async () => {
+    if (user?.id) {
+      await fetchProfile(user.id)
+    }
+  }, [user?.id, fetchProfile])
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
     setProfile(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isLoading, isRecovery, clearRecovery, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, profile, isLoading, isRecovery, clearRecovery, refreshProfile, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

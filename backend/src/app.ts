@@ -6,6 +6,7 @@ import { authRouter } from './routes/auth.js'
 import { bookingsRouter } from './routes/bookings.js'
 import { availabilityRouter } from './routes/availability.js'
 import { remindersRouter } from './routes/reminders.js'
+import { petsRouter } from './routes/pets.js'
 
 export const app = express()
 
@@ -30,3 +31,4 @@ app.use('/api/auth', authRouter)
 app.use('/api/bookings', bookingsRouter)
 app.use('/api/availability', availabilityRouter)
 app.use('/api/reminders', remindersRouter)
+app.use('/api/pets', petsRouter)

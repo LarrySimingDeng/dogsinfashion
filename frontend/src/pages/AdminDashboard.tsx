@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Calendar, Clock, Settings, Filter, Bell, BarChart3, Dog, MapPin, RefreshCw, DollarSign } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiFetch } from '../lib/api'
@@ -21,6 +22,9 @@ interface Booking {
   notes: string | null
   status: 'confirmed' | 'completed' | 'cancelled'
   deposit_status?: 'none' | 'paid' | 'refunded'
+  // Set when the booking was created with a saved pet profile.
+  // Legacy bookings (pre-pet-profiles) have pet_id = null.
+  pet_id: string | null
   created_at: string
 }
 
@@ -230,7 +234,17 @@ function BookingsTab() {
                       <div className="flex items-center gap-2">
                         <Dog className="h-4 w-4 shrink-0 text-primary/70" />
                         <span className="font-semibold text-warm-dark">Dog Name</span>
-                        <span className="text-warm-gray">{b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}</span>
+                        {b.pet_id ? (
+                          <Link
+                            to={`/my-pets/${b.pet_id}`}
+                            title="View pet profile"
+                            className="text-warm-gray underline-offset-2 transition-colors hover:text-secondary hover:underline"
+                          >
+                            {b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}
+                          </Link>
+                        ) : (
+                          <span className="text-warm-gray">{b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0 text-primary/70" />

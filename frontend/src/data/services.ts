@@ -12,6 +12,14 @@ export interface ServiceTier {
   accentColor: string
 }
 
+// Single source of truth for "what weight maps to what size?"
+// Used by both the service picker and the pet form so they always agree.
+export const SIZE_WEIGHT_RANGES: Record<'small' | 'medium' | 'large', string> = {
+  small: 'Under 20 lbs',
+  medium: '20–50 lbs',
+  large: 'Over 50 lbs',
+}
+
 export const services: ServiceTier[] = [
   {
     id: 'bath-small',

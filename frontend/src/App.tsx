@@ -7,6 +7,8 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import BookingPage from './pages/BookingPage'
 import MyBookingsPage from './pages/MyBookingsPage'
+import MyPetsPage from './pages/MyPetsPage'
+import PetDetailPage from './pages/PetDetailPage'
 import AdminDashboard from './pages/AdminDashboard'
 
 function AppContent() {
@@ -50,6 +52,22 @@ function AppContent() {
             element={
               <ProtectedRoute requireClient>
                 <MyBookingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-pets"
+            element={
+              <ProtectedRoute requireClient>
+                <MyPetsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-pets/:id"
+            element={
+              <ProtectedRoute>
+                <PetDetailPage />
               </ProtectedRoute>
             }
           />

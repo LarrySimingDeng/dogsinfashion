@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { PawPrint, Menu, X, User, LogOut, Shield, CalendarCheck } from 'lucide-react'
+import { PawPrint, Menu, X, User, LogOut, Shield, CalendarCheck, Dog } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 
@@ -95,13 +95,22 @@ export default function Navbar() {
                         <Shield className="h-4 w-4" /> Admin Dashboard
                       </Link>
                     ) : (
-                      <Link
-                        to="/my-bookings"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
-                      >
-                        <CalendarCheck className="h-4 w-4" /> My Bookings
-                      </Link>
+                      <>
+                        <Link
+                          to="/my-pets"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
+                        >
+                          <Dog className="h-4 w-4" /> My Dogs
+                        </Link>
+                        <Link
+                          to="/my-bookings"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-warm-dark hover:bg-sky/30"
+                        >
+                          <CalendarCheck className="h-4 w-4" /> My Bookings
+                        </Link>
+                      </>
                     )}
                     <hr className="my-1 border-sky" />
                     <button
@@ -177,13 +186,22 @@ export default function Navbar() {
                       Admin Dashboard
                     </Link>
                   ) : (
-                    <Link
-                      to="/my-bookings"
-                      onClick={close}
-                      className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
-                    >
-                      My Bookings
-                    </Link>
+                    <>
+                      <Link
+                        to="/my-pets"
+                        onClick={close}
+                        className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
+                      >
+                        My Dogs
+                      </Link>
+                      <Link
+                        to="/my-bookings"
+                        onClick={close}
+                        className="rounded-lg px-3 py-2.5 text-sm font-semibold text-warm-dark transition-colors hover:bg-sky/40"
+                      >
+                        My Bookings
+                      </Link>
+                    </>
                   )}
                   <button
                     onClick={() => { handleSignOut(); close() }}

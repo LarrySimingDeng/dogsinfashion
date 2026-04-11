@@ -50,6 +50,8 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     dog_breed: z.string().optional(),
     address: z.string().min(1),
     notes: z.string().optional(),
+    pet_id: z.string().uuid().optional(),
+    save_default_address: z.boolean().optional(),
   })
 
   const parsed = schema.safeParse(req.body)
@@ -58,11 +60,26 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     return
   }
 
-  const { service_id, date, start_time, dog_name, dog_breed, address, notes } = parsed.data
+  const { service_id, date, start_time, dog_name, dog_breed, address, notes, pet_id, save_default_address } = parsed.data
   const duration = SERVICE_DURATIONS[service_id]
   if (!duration) {
     res.status(400).json({ error: 'Invalid service_id' })
     return
+  }
+
+  // Validate pet_id belongs to the caller and is not archived.
+  if (pet_id) {
+    const { data: pet } = await supabaseAdmin
+      .from('pets')
+      .select('id')
+      .eq('id', pet_id)
+      .eq('user_id', req.user!.id)
+      .is('archived_at', null)
+      .single()
+    if (!pet) {
+      res.status(400).json({ error: 'Invalid pet_id' })
+      return
+    }
   }
 
   const end_time = addMinutesToTime(start_time, duration * 60)
@@ -88,6 +105,7 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
       address,
       notes: notes ?? null,
       status: 'confirmed',
+      pet_id: pet_id ?? null,
     })
     .select()
     .single()
@@ -116,6 +134,21 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   notifyDorisSms(booking).catch(err => console.error('Doris SMS failed:', err))
   scheduleReminders(booking, clientEmail).catch(err => console.error('Schedule reminders failed:', err))
 
+  // Save default address BEFORE responding so the frontend can reliably
+  // refetch the profile right after POST and see the new value. Awaiting
+  // here also means any DB error actually surfaces in logs instead of
+  // being swallowed by a dangling promise. Failures do not fail the
+  // booking itself — booking already succeeded.
+  if (save_default_address) {
+    const { error: addrErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ default_address: address })
+      .eq('id', req.user!.id)
+    if (addrErr) {
+      console.error('[booking] save default_address failed:', addrErr)
+    }
+  }
+
   res.status(201).json(booking)
 })
 
@@ -141,6 +174,8 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     notes: z.string().optional(),
     source_id: z.string().min(1),         // Square Web SDK token
     idempotency_key: z.string().uuid(),   // Client-generated UUID
+    pet_id: z.string().uuid().optional(),
+    save_default_address: z.boolean().optional(),
   })
 
   const parsed = schema.safeParse(req.body)
@@ -151,8 +186,23 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
 
   const {
     service_id, date, start_time, dog_name, dog_breed, address, notes,
-    source_id, idempotency_key,
+    source_id, idempotency_key, pet_id, save_default_address,
   } = parsed.data
+
+  // Validate pet_id belongs to the caller and is not archived.
+  if (pet_id) {
+    const { data: pet } = await supabaseAdmin
+      .from('pets')
+      .select('id')
+      .eq('id', pet_id)
+      .eq('user_id', req.user!.id)
+      .is('archived_at', null)
+      .single()
+    if (!pet) {
+      res.status(400).json({ error: 'Invalid pet_id' })
+      return
+    }
+  }
 
   const duration = SERVICE_DURATIONS[service_id]
   if (!duration) {
@@ -217,6 +267,7 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
       status: 'confirmed',
       deposit_status: 'paid',
       deposit_paid_at: new Date().toISOString(),
+      pet_id: pet_id ?? null,
     })
     .select()
     .single()
@@ -295,6 +346,20 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     .catch(err => console.error('Doris deposit email failed:', err))
   notifyDorisSms(booking).catch(err => console.error('Doris SMS failed:', err))
   scheduleReminders(booking, clientEmail).catch(err => console.error('Schedule reminders failed:', err))
+
+  // Save default address BEFORE responding (same rationale as POST /).
+  // Awaited so the frontend's post-success refreshProfile() sees the new
+  // value, and so any DB error actually surfaces instead of disappearing
+  // into a dangling promise. Failures do not fail the booking.
+  if (save_default_address) {
+    const { error: addrErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ default_address: address })
+      .eq('id', req.user!.id)
+    if (addrErr) {
+      console.error('[with-deposit] save default_address failed:', addrErr)
+    }
+  }
 
   res.status(201).json({
     ...booking,

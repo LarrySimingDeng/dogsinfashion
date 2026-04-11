@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Check, ArrowLeft, ArrowRight, Calendar, Lock } from 'lucide-react'
+import { Check, ArrowLeft, ArrowRight, Calendar, Lock, Plus } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { services, getServiceById, formatDuration } from '../data/services'
 
@@ -10,7 +10,10 @@ import {
   SquarePaymentForm,
   type SquarePaymentFormHandle,
 } from '../components/SquarePaymentForm'
+import PetAvatar from '../components/PetAvatar'
 import { apiFetch } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
+import type { Pet } from '../types/pet'
 
 const STEPS = ['Service', 'Date & Time', 'Details', 'Confirm']
 
@@ -24,6 +27,7 @@ const DEPOSIT_AMOUNT_DISPLAY = `$${(DEPOSIT_AMOUNT_CENTS / 100).toFixed(0)}`
 export default function BookingPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { profile, refreshProfile } = useAuth()
 
   const [step, setStep] = useState(searchParams.get('service') ? 1 : 0)
   const [serviceId, setServiceId] = useState(searchParams.get('service') || '')
@@ -37,11 +41,63 @@ export default function BookingPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  // Pet picker state (Phase D).
+  const [pets, setPets] = useState<Pet[]>([])
+  const [selectedPetId, setSelectedPetId] = useState<string | null>(null)
+  // "Save this as my default address" — local only, resets each visit on purpose.
+  const [saveDefaultAddress, setSaveDefaultAddress] = useState(false)
+
   // Square deposit state — only meaningful when DEPOSIT_REQUIRED=true.
   const squareFormRef = useRef<SquarePaymentFormHandle>(null)
   const [paymentReady, setPaymentReady] = useState(!DEPOSIT_REQUIRED)
 
   const selectedService = getServiceById(serviceId)
+
+  // Fetch pets on mount + auto-select the most recently updated one so
+  // a returning client can one-click through the booking flow.
+  useEffect(() => {
+    apiFetch<Pet[]>('/api/pets')
+      .then((list) => {
+        setPets(list)
+        if (list.length > 0) {
+          const first = list[0]!
+          setSelectedPetId(first.id)
+          setDogName(first.name)
+          setDogBreed(first.breed ?? '')
+        }
+      })
+      .catch((err) => {
+        // Non-fatal — user can still fill fields manually.
+        console.error('[booking] failed to load pets:', err)
+      })
+  }, [])
+
+  // Prefill address from profile default once profile is loaded.
+  // Only prefill if user hasn't already typed something (avoids clobbering).
+  useEffect(() => {
+    if (profile?.default_address && !address) {
+      setAddress(profile.default_address)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.default_address])
+
+  const handlePickPet = (pet: Pet) => {
+    setSelectedPetId(pet.id)
+    setDogName(pet.name)
+    setDogBreed(pet.breed ?? '')
+  }
+
+  const handleNewPet = () => {
+    setSelectedPetId(null)
+    setDogName('')
+    setDogBreed('')
+  }
+
+  // Show the "save default" checkbox only when the current address would
+  // actually change the profile default (or there is no default yet).
+  const trimmedAddress = address.trim()
+  const addressDiffersFromDefault =
+    trimmedAddress.length > 0 && trimmedAddress !== (profile?.default_address ?? '')
 
   const canNext = () => {
     if (step === 0) return !!serviceId
@@ -54,6 +110,10 @@ export default function BookingPage() {
     setSubmitting(true)
     setError('')
     try {
+      // Only forward `save_default_address: true` when it would actually change
+      // something — the backend no-ops otherwise, but this keeps the wire
+      // payload honest.
+      const shouldSave = saveDefaultAddress && addressDiffersFromDefault
       if (DEPOSIT_REQUIRED) {
         if (!squareFormRef.current) {
           throw new Error('Payment form is not ready yet')
@@ -73,6 +133,8 @@ export default function BookingPage() {
             dog_breed: dogBreed || undefined,
             address,
             notes: notes || undefined,
+            pet_id: selectedPetId || undefined,
+            save_default_address: shouldSave || undefined,
             source_id: sourceId,
             idempotency_key: idempotencyKey,
           }),
@@ -88,8 +150,24 @@ export default function BookingPage() {
             dog_breed: dogBreed || undefined,
             address,
             notes: notes || undefined,
+            pet_id: selectedPetId || undefined,
+            save_default_address: shouldSave || undefined,
           }),
         })
+      }
+      // Booking succeeded. If the user opted to save a new default address,
+      // refetch the profile so subsequent /book visits (without a full
+      // reload) see the freshly-persisted value. The backend awaits the
+      // write before responding, so this refetch is guaranteed to read
+      // the new value.
+      if (shouldSave) {
+        try {
+          await refreshProfile()
+        } catch (refreshErr) {
+          // Non-fatal: the booking still succeeded, we just failed to
+          // refresh the local cache. Next full reload will pick it up.
+          console.error('[booking] refreshProfile after save failed:', refreshErr)
+        }
       }
       setSuccess(true)
     } catch (err) {
@@ -239,15 +317,73 @@ export default function BookingPage() {
               <h2 className="mb-6 font-display text-2xl font-bold text-warm-dark">
                 Tell Us About Your Pup
               </h2>
+
+              {/* Pet picker — only shown when the user has saved pets. */}
+              {pets.length > 0 && (
+                <div className="mb-5">
+                  <label className="mb-2 block text-sm font-semibold text-warm-dark">
+                    Which pup?
+                  </label>
+                  <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+                    {pets.map((pet) => {
+                      const selected = selectedPetId === pet.id
+                      return (
+                        <button
+                          key={pet.id}
+                          type="button"
+                          onClick={() => handlePickPet(pet)}
+                          className={`flex min-w-[72px] flex-col items-center gap-1.5 rounded-2xl border-2 px-3 py-2 transition-all ${
+                            selected
+                              ? 'border-secondary bg-secondary/5 shadow-sm'
+                              : 'border-sky hover:border-secondary/50'
+                          }`}
+                        >
+                          <PetAvatar photoUrl={pet.photo_url} name={pet.name} size="md" />
+                          <span className="max-w-[72px] truncate text-xs font-semibold text-warm-dark">
+                            {pet.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      onClick={handleNewPet}
+                      className={`flex min-w-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-3 py-2 transition-all ${
+                        selectedPetId === null
+                          ? 'border-secondary bg-secondary/5'
+                          : 'border-sky hover:border-secondary/50'
+                      }`}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky/40">
+                        <Plus className="h-5 w-5 text-warm-gray" />
+                      </div>
+                      <span className="text-xs font-semibold text-warm-dark">New</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold">Dog's Name *</label>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="block text-sm font-semibold">Dog's Name *</label>
+                    {selectedPetId && (
+                      <button
+                        type="button"
+                        onClick={handleNewPet}
+                        className="text-xs font-semibold text-secondary hover:underline"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={dogName}
                     onChange={e => setDogName(e.target.value)}
                     placeholder="e.g. Buddy"
-                    className={inputClass}
+                    readOnly={!!selectedPetId}
+                    className={`${inputClass} ${selectedPetId ? 'cursor-not-allowed bg-sky/20' : ''}`}
                   />
                 </div>
                 <div>
@@ -257,7 +393,8 @@ export default function BookingPage() {
                     value={dogBreed}
                     onChange={e => setDogBreed(e.target.value)}
                     placeholder="e.g. Golden Retriever, 65 lbs"
-                    className={inputClass}
+                    readOnly={!!selectedPetId}
+                    className={`${inputClass} ${selectedPetId ? 'cursor-not-allowed bg-sky/20' : ''}`}
                   />
                 </div>
                 <div>
@@ -269,6 +406,17 @@ export default function BookingPage() {
                     placeholder="e.g. 123 Oak Lane, Davis, CA 95616"
                     className={inputClass}
                   />
+                  {addressDiffersFromDefault && (
+                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-warm-gray">
+                      <input
+                        type="checkbox"
+                        checked={saveDefaultAddress}
+                        onChange={(e) => setSaveDefaultAddress(e.target.checked)}
+                        className="h-4 w-4 rounded border-sky text-secondary focus:ring-secondary"
+                      />
+                      Save as my default address
+                    </label>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold">Special Notes</label>
