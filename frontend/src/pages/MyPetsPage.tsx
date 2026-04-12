@@ -38,7 +38,7 @@ export default function MyPetsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSaved = (pet: Pet, options?: { photoFailed?: boolean }) => {
+  const handleSaved = (pet: Pet, options?: { photoFailed?: string }) => {
     setPets((prev) => {
       const i = prev.findIndex((p) => p.id === pet.id)
       if (i === -1) return [pet, ...prev]
@@ -47,7 +47,7 @@ export default function MyPetsPage() {
       return next
     })
     if (options?.photoFailed) {
-      showToast('Pet saved, but photo upload failed — edit to try again.', 'error')
+      showToast(`Photo upload failed: ${options.photoFailed}`, 'error')
     } else {
       showToast(editing ? 'Pet updated!' : 'Pet added!')
     }

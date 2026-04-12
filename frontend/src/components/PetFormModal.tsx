@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -13,7 +13,7 @@ interface Props {
   /** Owner user_id (admin may be editing a client's pet — photo goes under their folder). */
   ownerId: string
   onClose: () => void
-  onSaved: (pet: Pet, options?: { photoFailed?: boolean }) => void
+  onSaved: (pet: Pet, options?: { photoFailed?: string }) => void
 }
 
 interface FormState {
@@ -78,6 +78,22 @@ export default function PetFormModal({ pet, ownerId, onClose, onSaved }: Props) 
 
   const isEdit = Boolean(pet)
 
+  // Lock body scroll while modal is open to prevent background page scrolling on mobile.
+  useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
   const buildPayload = () => ({
     name: form.name.trim(),
     breed: form.breed.trim() || undefined,
@@ -128,7 +144,8 @@ export default function PetFormModal({ pet, ownerId, onClose, onSaved }: Props) 
           onSaved(savedPet)
         } catch (photoErr) {
           console.error('[pet-form] photo upload failed:', photoErr)
-          onSaved(savedPet, { photoFailed: true })
+          const reason = photoErr instanceof Error ? photoErr.message : String(photoErr)
+          onSaved(savedPet, { photoFailed: reason })
         }
       } else {
         onSaved(savedPet)
@@ -150,7 +167,7 @@ export default function PetFormModal({ pet, ownerId, onClose, onSaved }: Props) 
         className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
         <div className="mb-4 flex items-start justify-between">
           <h2 className="font-display text-xl font-bold text-warm-dark">
             {isEdit ? 'Edit Pet' : 'Add a New Pet'}

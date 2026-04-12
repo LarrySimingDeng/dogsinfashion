@@ -344,7 +344,7 @@ export default function PetDetailPage() {
           onSaved={(updated, options) => {
             setPet((prev) => (prev ? { ...prev, ...updated } : prev))
             if (options?.photoFailed) {
-              showToast('Saved, but photo upload failed — try again.', 'error')
+              showToast(`Photo upload failed: ${options.photoFailed}`, 'error')
             } else {
               showToast('Pet updated!')
             }
