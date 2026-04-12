@@ -219,8 +219,8 @@ function BookingsTab() {
                   </div>
 
                   {/* Two-column: details left, badge + actions right */}
-                  <div className="flex gap-5">
-                    <div className="flex-1 space-y-2 text-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
+                    <div className="min-w-0 flex-1 space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 shrink-0 text-primary/70" />
                         <span className="font-semibold text-warm-dark">Date</span>
@@ -231,9 +231,9 @@ function BookingsTab() {
                         <span className="font-semibold text-warm-dark">Time</span>
                         <span className="text-warm-gray">{formatTime(b.start_time)} — {formatTime(b.end_time)}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Dog className="h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="font-semibold text-warm-dark">Dog Name</span>
+                      <div className="flex items-start gap-2">
+                        <Dog className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="shrink-0 font-semibold text-warm-dark">Dog Name</span>
                         {b.pet_id ? (
                           <Link
                             to={`/my-pets/${b.pet_id}`}
@@ -246,17 +246,17 @@ function BookingsTab() {
                           <span className="text-warm-gray">{b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="font-semibold text-warm-dark">Address</span>
-                        <span className="text-warm-gray">{b.address}</span>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+                        <span className="shrink-0 font-semibold text-warm-dark">Address</span>
+                        <span className="break-words text-warm-gray">{b.address}</span>
                       </div>
                       {b.notes && (
                         <p className="mt-1 text-xs italic text-warm-gray">Note: {b.notes}</p>
                       )}
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end justify-between">
+                    <div className="flex shrink-0 flex-col items-start justify-between gap-3 sm:items-end">
                       <div className="flex flex-col items-end gap-1">
                         <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}>
                           {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
