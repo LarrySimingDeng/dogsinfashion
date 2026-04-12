@@ -133,8 +133,7 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
             const isPast = day < today
             const isFuture = day > maxDate
             const isSelected = dateStr === selectedDate
-            const isSunday = day.getDay() === 0
-            const disabled = isPast || isFuture || isSunday
+            const disabled = isPast || isFuture
 
             return (
               <button
