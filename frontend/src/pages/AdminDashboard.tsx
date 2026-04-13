@@ -19,6 +19,8 @@ import AnalyticsTab from "../components/analytics/AnalyticsTab";
 import DogLoader from "../components/DogLoader";
 import RescheduleModal from "../components/RescheduleModal";
 import Toast, { ToastData } from "../components/Toast";
+import DatePicker from "../components/DatePicker";
+import TimePicker from "../components/TimePicker";
 
 interface Booking {
   id: string;
@@ -610,38 +612,31 @@ function ScheduleTab() {
       {/* Blocked Dates */}
       <div className="rounded-2xl border-2 border-sky bg-white p-6">
         <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">
-          Blocked Dates (具体时间段歇业)
+          Blocked Dates (临时某天某时间段歇业)
         </h2>
 
         <div className="mb-4 flex flex-wrap items-end gap-3">
           <div>
             <label className="mb-1 block text-xs font-semibold">Date</label>
-            <input
-              type="date"
-              value={newBlockedDate}
-              onChange={(e) => setNewBlockedDate(e.target.value)}
-              className={inputClass}
-            />
+            <DatePicker value={newBlockedDate} onChange={setNewBlockedDate} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold">Time</label>
             <div className="flex items-center gap-2">
-              <input
-                type="time"
+              <TimePicker
                 value={newBlockedStartTime}
-                onChange={(e) => setNewBlockedStartTime(e.target.value)}
+                onChange={setNewBlockedStartTime}
                 disabled={allDay}
-                className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
+                placeholder="Start"
               />
               <span className={`text-warm-gray ${allDay ? "opacity-40" : ""}`}>
                 –
               </span>
-              <input
-                type="time"
+              <TimePicker
                 value={newBlockedEndTime}
-                onChange={(e) => setNewBlockedEndTime(e.target.value)}
+                onChange={setNewBlockedEndTime}
                 disabled={allDay}
-                className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
+                placeholder="End"
               />
             </div>
           </div>
