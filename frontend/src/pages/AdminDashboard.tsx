@@ -1,173 +1,245 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { Calendar, Clock, Settings, Filter, Bell, BarChart3, Dog, MapPin, RefreshCw, DollarSign } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { apiFetch } from '../lib/api'
-import { getServiceById, LEGACY_SERVICE_NAMES } from '../data/services'
-import AnalyticsTab from '../components/analytics/AnalyticsTab'
-import DogLoader from '../components/DogLoader'
-import RescheduleModal from '../components/RescheduleModal'
-import Toast, { ToastData } from '../components/Toast'
+import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import {
+  Calendar,
+  Clock,
+  Settings,
+  Filter,
+  Bell,
+  BarChart3,
+  Dog,
+  MapPin,
+  RefreshCw,
+  DollarSign,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { apiFetch } from "../lib/api";
+import { getServiceById, LEGACY_SERVICE_NAMES } from "../data/services";
+import AnalyticsTab from "../components/analytics/AnalyticsTab";
+import DogLoader from "../components/DogLoader";
+import RescheduleModal from "../components/RescheduleModal";
+import Toast, { ToastData } from "../components/Toast";
 
 interface Booking {
-  id: string
-  user_id: string
-  service_id: string
-  date: string
-  start_time: string
-  end_time: string
-  dog_name: string
-  dog_breed: string | null
-  address: string
-  notes: string | null
-  status: 'confirmed' | 'completed' | 'cancelled'
-  deposit_status?: 'none' | 'paid' | 'refunded'
+  id: string;
+  user_id: string;
+  service_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  dog_name: string;
+  dog_breed: string | null;
+  address: string;
+  notes: string | null;
+  status: "confirmed" | "completed" | "cancelled";
+  deposit_status?: "none" | "paid" | "refunded";
   // Set when the booking was created with a saved pet profile.
   // Legacy bookings (pre-pet-profiles) have pet_id = null.
-  pet_id: string | null
-  created_at: string
+  pet_id: string | null;
+  created_at: string;
 }
 
 interface AvailabilityRow {
-  id: string
-  day_of_week: number
-  start_time: string
-  end_time: string
-  is_active: boolean
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
 }
 
 interface BlockedDate {
-  id: string
-  date: string
-  reason: string | null
-  start_time: string | null
-  end_time: string | null
+  id: string;
+  date: string;
+  reason: string | null;
+  start_time: string | null;
+  end_time: string | null;
 }
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState<'analytics' | 'bookings' | 'schedule' | 'reminders'>('bookings')
+  const [tab, setTab] = useState<
+    "analytics" | "bookings" | "schedule" | "reminders"
+  >("bookings");
 
   return (
     <div className="min-h-screen bg-background px-6 pb-20 pt-28">
       <div className="mx-auto max-w-[960px]">
-        <h1 className="mb-6 font-display text-3xl font-bold text-warm-dark">Admin Dashboard</h1>
+        <h1 className="mb-6 font-display text-3xl font-bold text-warm-dark">
+          Admin Dashboard
+        </h1>
 
         {/* Tabs */}
         <div className="mb-6 flex flex-wrap gap-2">
           <button
-            onClick={() => setTab('bookings')}
+            onClick={() => setTab("bookings")}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'bookings'
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+              tab === "bookings"
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
             }`}
           >
             <Calendar className="h-4 w-4" /> Bookings
           </button>
           <button
-            onClick={() => setTab('schedule')}
+            onClick={() => setTab("schedule")}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'schedule'
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+              tab === "schedule"
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
             }`}
           >
             <Settings className="h-4 w-4" /> Schedule
           </button>
           <button
-            onClick={() => setTab('reminders')}
+            onClick={() => setTab("reminders")}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'reminders'
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+              tab === "reminders"
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
             }`}
           >
             <Bell className="h-4 w-4" /> Reminders
           </button>
           <button
-            onClick={() => setTab('analytics')}
+            onClick={() => setTab("analytics")}
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'analytics'
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+              tab === "analytics"
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
             }`}
           >
             <BarChart3 className="h-4 w-4" /> Analytics
           </button>
         </div>
 
-        {tab === 'analytics' ? <AnalyticsTab /> : tab === 'bookings' ? <BookingsTab /> : tab === 'schedule' ? <ScheduleTab /> : <RemindersTab />}
+        {tab === "analytics" ? (
+          <AnalyticsTab />
+        ) : tab === "bookings" ? (
+          <BookingsTab />
+        ) : tab === "schedule" ? (
+          <ScheduleTab />
+        ) : (
+          <RemindersTab />
+        )}
       </div>
     </div>
-  )
+  );
 }
 
 function BookingsTab() {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [filterLoading, setFilterLoading] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null)
-  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
-  const [toasts, setToasts] = useState<ToastData[]>([])
-  const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), [])
-  const showToast = (message: string, type: ToastData['type'] = 'success') =>
-    setToasts(prev => prev.some(t => t.message === message) ? prev : [...prev, { id: Date.now(), message, type }])
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(
+    null,
+  );
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const dismissToast = useCallback(
+    (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id)),
+    [],
+  );
+  const showToast = (message: string, type: ToastData["type"] = "success") =>
+    setToasts((prev) =>
+      prev.some((t) => t.message === message)
+        ? prev
+        : [...prev, { id: Date.now(), message, type }],
+    );
 
   useEffect(() => {
     if (initialLoading) {
       // first load — handled by initialLoading
     } else {
-      setFilterLoading(true)
+      setFilterLoading(true);
     }
-    const params = statusFilter ? `?status=${statusFilter}` : ''
+    const params = statusFilter ? `?status=${statusFilter}` : "";
     apiFetch<Booking[]>(`/api/bookings${params}`)
-      .then(data => setBookings(data.sort((a, b) => b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time))))
-      .catch((err) => console.error('Failed to fetch bookings:', err))
-      .finally(() => { setInitialLoading(false); setFilterLoading(false) })
-  }, [statusFilter])
+      .then((data) =>
+        setBookings(
+          data.sort(
+            (a, b) =>
+              b.date.localeCompare(a.date) ||
+              b.start_time.localeCompare(a.start_time),
+          ),
+        ),
+      )
+      .catch((err) => console.error("Failed to fetch bookings:", err))
+      .finally(() => {
+        setInitialLoading(false);
+        setFilterLoading(false);
+      });
+  }, [statusFilter]);
 
-  const updateStatus = async (id: string, status: 'completed' | 'cancelled') => {
-    if (updatingIds.has(id)) return
-    if (status === 'cancelled') {
-      const booking = bookings.find(b => b.id === id)
-      const label = booking ? `${booking.dog_name} on ${booking.date} at ${booking.start_time}` : 'this booking'
-      if (!confirm(`Cancel ${label}?\n\nThis will remove the Google Calendar event and email the customer.`)) {
-        return
+  const updateStatus = async (
+    id: string,
+    status: "completed" | "cancelled",
+  ) => {
+    if (updatingIds.has(id)) return;
+    if (status === "cancelled") {
+      const booking = bookings.find((b) => b.id === id);
+      const label = booking
+        ? `${booking.dog_name} on ${booking.date} at ${booking.start_time}`
+        : "this booking";
+      if (
+        !confirm(
+          `Cancel ${label}?\n\nThis will remove the Google Calendar event and email the customer.`,
+        )
+      ) {
+        return;
       }
     }
-    setUpdatingIds(prev => new Set(prev).add(id))
+    setUpdatingIds((prev) => new Set(prev).add(id));
     try {
       await apiFetch(`/api/bookings/${id}/status`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify({ status }),
-      })
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
-      showToast(`Booking ${status === 'completed' ? 'marked as completed' : 'cancelled'} successfully!`)
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b)),
+      );
+      showToast(
+        `Booking ${status === "completed" ? "marked as completed" : "cancelled"} successfully!`,
+      );
     } catch {
-      showToast('Failed to update status', 'error')
+      showToast("Failed to update status", "error");
     } finally {
-      setUpdatingIds(prev => { const next = new Set(prev); next.delete(id); return next })
+      setUpdatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
-  }
+  };
 
   const formatTime = (t: string) => {
-    const [h, m] = t.split(':').map(Number)
-    const ampm = h! >= 12 ? 'PM' : 'AM'
-    const dh = h! === 0 ? 12 : h! > 12 ? h! - 12 : h!
-    return `${dh}:${String(m!).padStart(2, '0')} ${ampm}`
-  }
+    const [h, m] = t.split(":").map(Number);
+    const ampm = h! >= 12 ? "PM" : "AM";
+    const dh = h! === 0 ? 12 : h! > 12 ? h! - 12 : h!;
+    return `${dh}:${String(m!).padStart(2, "0")} ${ampm}`;
+  };
 
   const statusColors: Record<string, string> = {
-    confirmed: 'bg-secondary/10 text-secondary',
-    completed: 'bg-sage-light text-sage',
-    cancelled: 'bg-red-50 text-red-500',
-  }
+    confirmed: "bg-secondary/10 text-secondary",
+    completed: "bg-sage-light text-sage",
+    cancelled: "bg-red-50 text-red-500",
+  };
 
   if (initialLoading) {
-    return <div className="flex justify-center py-32"><DogLoader /></div>
+    return (
+      <div className="flex justify-center py-32">
+        <DogLoader />
+      </div>
+    );
   }
 
   return (
@@ -175,29 +247,31 @@ function BookingsTab() {
       {/* Filters */}
       <div className="mb-4 flex items-center gap-3">
         <Filter className="h-4 w-4 text-warm-gray" />
-        {['', 'confirmed', 'completed', 'cancelled'].map(s => (
+        {["", "confirmed", "completed", "cancelled"].map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === s
-                ? 'bg-secondary text-white'
-                : 'bg-sky/30 text-warm-dark hover:bg-sky/50'
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
             }`}
           >
-            {s || 'All'}
+            {s || "All"}
           </button>
         ))}
       </div>
 
       {filterLoading ? (
-        <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" /></div>
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
+        </div>
       ) : bookings.length === 0 ? (
         <p className="py-8 text-center text-warm-gray">No bookings found.</p>
       ) : (
         <div className="space-y-3">
-          {bookings.map(b => {
-            const service = getServiceById(b.service_id)
+          {bookings.map((b) => {
+            const service = getServiceById(b.service_id);
             return (
               <motion.div
                 key={b.id}
@@ -211,7 +285,9 @@ function BookingsTab() {
                   {/* Header: service name + price */}
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="font-display text-lg font-bold text-warm-dark">
-                      {service?.name || LEGACY_SERVICE_NAMES[b.service_id] || b.service_id}
+                      {service?.name ||
+                        LEGACY_SERVICE_NAMES[b.service_id] ||
+                        b.service_id}
                     </h3>
                     {service && (
                       <span className="font-display text-2xl font-bold text-primary/70">
@@ -225,58 +301,88 @@ function BookingsTab() {
                     <div className="min-w-0 flex-1 space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="font-semibold text-warm-dark">Date</span>
-                        <span className="text-warm-gray">{new Date(b.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span className="font-semibold text-warm-dark">
+                          Date
+                        </span>
+                        <span className="text-warm-gray">
+                          {new Date(b.date + "T00:00:00").toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="font-semibold text-warm-dark">Time</span>
-                        <span className="text-warm-gray">{formatTime(b.start_time)} — {formatTime(b.end_time)}</span>
+                        <span className="font-semibold text-warm-dark">
+                          Time
+                        </span>
+                        <span className="text-warm-gray">
+                          {formatTime(b.start_time)} — {formatTime(b.end_time)}
+                        </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <Dog className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="shrink-0 font-semibold text-warm-dark">Dog Name</span>
+                        <span className="shrink-0 font-semibold text-warm-dark">
+                          Dog Name
+                        </span>
                         {b.pet_id ? (
                           <Link
                             to={`/my-pets/${b.pet_id}`}
                             title="View pet profile"
                             className="text-warm-gray underline-offset-2 transition-colors hover:text-secondary hover:underline"
                           >
-                            {b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}
+                            {b.dog_name}
+                            {b.dog_breed ? ` (${b.dog_breed})` : ""}
                           </Link>
                         ) : (
-                          <span className="text-warm-gray">{b.dog_name}{b.dog_breed ? ` (${b.dog_breed})` : ''}</span>
+                          <span className="text-warm-gray">
+                            {b.dog_name}
+                            {b.dog_breed ? ` (${b.dog_breed})` : ""}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-start gap-2">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
-                        <span className="shrink-0 font-semibold text-warm-dark">Address</span>
-                        <span className="break-words text-warm-gray">{b.address}</span>
+                        <span className="shrink-0 font-semibold text-warm-dark">
+                          Address
+                        </span>
+                        <span className="break-words text-warm-gray">
+                          {b.address}
+                        </span>
                       </div>
                       {b.notes && (
-                        <p className="mt-1 text-xs italic text-warm-gray">Note: {b.notes}</p>
+                        <p className="mt-1 text-xs italic text-warm-gray">
+                          Note: {b.notes}
+                        </p>
                       )}
                     </div>
 
                     <div className="flex shrink-0 flex-col items-start justify-between gap-3 sm:items-end">
                       <div className="flex flex-col items-end gap-1">
-                        <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}>
+                        <span
+                          className={`rounded-full px-3 py-0.5 text-xs font-bold ${statusColors[b.status]}`}
+                        >
                           {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                         </span>
-                        {b.deposit_status === 'paid' && (
+                        {b.deposit_status === "paid" && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-sage-light px-2.5 py-0.5 text-[10px] font-bold text-sage">
                             <DollarSign className="h-3 w-3" />
                             Deposit Paid
                           </span>
                         )}
-                        {b.deposit_status === 'refunded' && (
+                        {b.deposit_status === "refunded" && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-sky/40 px-2.5 py-0.5 text-[10px] font-bold text-warm-gray">
                             <DollarSign className="h-3 w-3" />
                             Deposit Refunded
                           </span>
                         )}
                       </div>
-                      {b.status === 'confirmed' && (
+                      {b.status === "confirmed" && (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setRescheduleBooking(b)}
@@ -286,14 +392,14 @@ function BookingsTab() {
                             Reschedule
                           </button>
                           <button
-                            onClick={() => updateStatus(b.id, 'completed')}
+                            onClick={() => updateStatus(b.id, "completed")}
                             disabled={updatingIds.has(b.id)}
                             className="rounded-full bg-sage-light px-3 py-1.5 text-xs font-bold text-sage transition-colors hover:bg-sage hover:text-white disabled:opacity-50"
                           >
                             Complete
                           </button>
                           <button
-                            onClick={() => updateStatus(b.id, 'cancelled')}
+                            onClick={() => updateStatus(b.id, "cancelled")}
                             disabled={updatingIds.has(b.id)}
                             className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
                           >
@@ -305,7 +411,7 @@ function BookingsTab() {
                   </div>
                 </div>
               </motion.div>
-            )
+            );
           })}
         </div>
       )}
@@ -315,103 +421,131 @@ function BookingsTab() {
           booking={rescheduleBooking}
           onClose={() => setRescheduleBooking(null)}
           onRescheduled={(updated) => {
-            setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
-            setRescheduleBooking(null)
-            showToast('Booking rescheduled successfully!')
+            setBookings((prev) =>
+              prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)),
+            );
+            setRescheduleBooking(null);
+            showToast("Booking rescheduled successfully!");
           }}
         />
       )}
 
       <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
-  )
+  );
 }
 
 function ScheduleTab() {
-  const [availability, setAvailability] = useState<AvailabilityRow[]>([])
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [newBlockedDate, setNewBlockedDate] = useState('')
-  const [newBlockedReason, setNewBlockedReason] = useState('')
-  const [newBlockedStartTime, setNewBlockedStartTime] = useState('')
-  const [newBlockedEndTime, setNewBlockedEndTime] = useState('')
-  const [allDay, setAllDay] = useState(false)
-  const [toasts, setToasts] = useState<ToastData[]>([])
-  const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), [])
-  const showToast = (message: string, type: ToastData['type'] = 'success') =>
-    setToasts(prev => prev.some(t => t.message === message) ? prev : [...prev, { id: Date.now(), message, type }])
+  const [availability, setAvailability] = useState<AvailabilityRow[]>([]);
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [newBlockedDate, setNewBlockedDate] = useState("");
+  const [newBlockedReason, setNewBlockedReason] = useState("");
+  const [newBlockedStartTime, setNewBlockedStartTime] = useState("");
+  const [newBlockedEndTime, setNewBlockedEndTime] = useState("");
+  const [allDay, setAllDay] = useState(false);
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const dismissToast = useCallback(
+    (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id)),
+    [],
+  );
+  const showToast = (message: string, type: ToastData["type"] = "success") =>
+    setToasts((prev) =>
+      prev.some((t) => t.message === message)
+        ? prev
+        : [...prev, { id: Date.now(), message, type }],
+    );
 
   useEffect(() => {
-    apiFetch<{ availability: AvailabilityRow[]; blockedDates: BlockedDate[] }>('/api/availability/schedule')
-      .then(data => {
-        setAvailability(data.availability)
-        setBlockedDates(data.blockedDates)
+    apiFetch<{ availability: AvailabilityRow[]; blockedDates: BlockedDate[] }>(
+      "/api/availability/schedule",
+    )
+      .then((data) => {
+        setAvailability(data.availability);
+        setBlockedDates(data.blockedDates);
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
-  const updateRow = (id: string, field: keyof AvailabilityRow, value: string | boolean) => {
-    setAvailability(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r))
-  }
+  const updateRow = (
+    id: string,
+    field: keyof AvailabilityRow,
+    value: string | boolean,
+  ) => {
+    setAvailability((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+  };
 
   const saveSchedule = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
-      await apiFetch('/api/availability/schedule', {
-        method: 'PUT',
+      await apiFetch("/api/availability/schedule", {
+        method: "PUT",
         body: JSON.stringify(availability),
-      })
-      showToast('Schedule saved')
+      });
+      showToast("Schedule saved");
     } catch {
-      showToast('Failed to save schedule', 'error')
+      showToast("Failed to save schedule", "error");
     }
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const addBlockedDate = async () => {
-    if (!newBlockedDate) return
+    if (!newBlockedDate) return;
     if (!allDay && (!newBlockedStartTime || !newBlockedEndTime)) {
-      showToast('Please set both start and end time', 'error')
-      return
+      showToast("Please set both start and end time", "error");
+      return;
     }
     try {
-      const data = await apiFetch<BlockedDate>('/api/availability/blocked-dates', {
-        method: 'POST',
-        body: JSON.stringify({
-          date: newBlockedDate,
-          reason: newBlockedReason || undefined,
-          ...(!allDay ? { start_time: newBlockedStartTime, end_time: newBlockedEndTime } : {}),
-        }),
-      })
-      setBlockedDates(prev => [...prev, data])
-      setNewBlockedDate('')
-      setNewBlockedReason('')
-      setNewBlockedStartTime('')
-      setNewBlockedEndTime('')
-      setAllDay(false)
-      showToast('Day off added successfully')
+      const data = await apiFetch<BlockedDate>(
+        "/api/availability/blocked-dates",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            date: newBlockedDate,
+            reason: newBlockedReason || undefined,
+            ...(!allDay
+              ? { start_time: newBlockedStartTime, end_time: newBlockedEndTime }
+              : {}),
+          }),
+        },
+      );
+      setBlockedDates((prev) => [...prev, data]);
+      setNewBlockedDate("");
+      setNewBlockedReason("");
+      setNewBlockedStartTime("");
+      setNewBlockedEndTime("");
+      setAllDay(false);
+      showToast("Day off added successfully");
     } catch {
-      showToast('Failed to add day off', 'error')
+      showToast("Failed to add day off", "error");
     }
-  }
+  };
 
   const removeBlockedDate = async (id: string) => {
     try {
-      await apiFetch(`/api/availability/blocked-dates/${id}`, { method: 'DELETE' })
-      setBlockedDates(prev => prev.filter(d => d.id !== id))
-      showToast('Day off removed')
+      await apiFetch(`/api/availability/blocked-dates/${id}`, {
+        method: "DELETE",
+      });
+      setBlockedDates((prev) => prev.filter((d) => d.id !== id));
+      showToast("Day off removed");
     } catch {
-      showToast('Failed to remove day off', 'error')
+      showToast("Failed to remove day off", "error");
     }
-  }
+  };
 
   const inputClass =
-    'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary'
+    "rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary";
 
   if (loading) {
-    return <div className="flex justify-center py-32"><DogLoader /></div>
+    return (
+      <div className="flex justify-center py-32">
+        <DogLoader />
+      </div>
+    );
   }
 
   return (
@@ -419,18 +553,24 @@ function ScheduleTab() {
       <Toast toasts={toasts} onDismiss={dismissToast} />
       {/* Weekly Schedule */}
       <div className="rounded-2xl border-2 border-sky bg-white p-6">
-        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">Weekly Hours</h2>
+        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">
+          Weekly Hours (固定工作时间)
+        </h2>
         <div className="space-y-3">
-          {availability.map(row => (
+          {availability.map((row) => (
             <div key={row.id} className="flex items-center gap-3">
               <label className="flex w-24 shrink-0 items-center gap-2">
                 <input
                   type="checkbox"
                   checked={row.is_active}
-                  onChange={e => updateRow(row.id, 'is_active', e.target.checked)}
+                  onChange={(e) =>
+                    updateRow(row.id, "is_active", e.target.checked)
+                  }
                   className="h-4 w-4 rounded border-sky text-secondary"
                 />
-                <span className={`text-sm font-semibold ${row.is_active ? 'text-warm-dark' : 'text-warm-gray line-through'}`}>
+                <span
+                  className={`text-sm font-semibold ${row.is_active ? "text-warm-dark" : "text-warm-gray line-through"}`}
+                >
                   {DAYS[row.day_of_week]}
                 </span>
               </label>
@@ -438,7 +578,9 @@ function ScheduleTab() {
                 <input
                   type="time"
                   value={row.start_time}
-                  onChange={e => updateRow(row.id, 'start_time', e.target.value)}
+                  onChange={(e) =>
+                    updateRow(row.id, "start_time", e.target.value)
+                  }
                   disabled={!row.is_active}
                   className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
                 />
@@ -446,7 +588,9 @@ function ScheduleTab() {
                 <input
                   type="time"
                   value={row.end_time}
-                  onChange={e => updateRow(row.id, 'end_time', e.target.value)}
+                  onChange={(e) =>
+                    updateRow(row.id, "end_time", e.target.value)
+                  }
                   disabled={!row.is_active}
                   className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
                 />
@@ -459,13 +603,15 @@ function ScheduleTab() {
           disabled={saving}
           className="mt-4 rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-glow disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save Schedule'}
+          {saving ? "Saving..." : "Save Schedule"}
         </button>
       </div>
 
       {/* Blocked Dates */}
       <div className="rounded-2xl border-2 border-sky bg-white p-6">
-        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">Blocked Dates (Days Off)</h2>
+        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">
+          Blocked Dates (具体时间段歇业)
+        </h2>
 
         <div className="mb-4 flex flex-wrap items-end gap-3">
           <div>
@@ -473,7 +619,7 @@ function ScheduleTab() {
             <input
               type="date"
               value={newBlockedDate}
-              onChange={e => setNewBlockedDate(e.target.value)}
+              onChange={(e) => setNewBlockedDate(e.target.value)}
               className={inputClass}
             />
           </div>
@@ -483,15 +629,17 @@ function ScheduleTab() {
               <input
                 type="time"
                 value={newBlockedStartTime}
-                onChange={e => setNewBlockedStartTime(e.target.value)}
+                onChange={(e) => setNewBlockedStartTime(e.target.value)}
                 disabled={allDay}
                 className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
               />
-              <span className={`text-warm-gray ${allDay ? 'opacity-40' : ''}`}>–</span>
+              <span className={`text-warm-gray ${allDay ? "opacity-40" : ""}`}>
+                –
+              </span>
               <input
                 type="time"
                 value={newBlockedEndTime}
-                onChange={e => setNewBlockedEndTime(e.target.value)}
+                onChange={(e) => setNewBlockedEndTime(e.target.value)}
                 disabled={allDay}
                 className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
               />
@@ -501,17 +649,21 @@ function ScheduleTab() {
             <input
               type="checkbox"
               checked={allDay}
-              onChange={e => setAllDay(e.target.checked)}
+              onChange={(e) => setAllDay(e.target.checked)}
               className="h-4 w-4 rounded border-sky text-secondary"
             />
-            <span className="text-sm font-semibold text-warm-dark">All Day</span>
+            <span className="text-sm font-semibold text-warm-dark">
+              All Day
+            </span>
           </label>
           <div>
-            <label className="mb-1 block text-xs font-semibold">Reason (optional)</label>
+            <label className="mb-1 block text-xs font-semibold">
+              Reason (optional)
+            </label>
             <input
               type="text"
               value={newBlockedReason}
-              onChange={e => setNewBlockedReason(e.target.value)}
+              onChange={(e) => setNewBlockedReason(e.target.value)}
               placeholder="e.g. Vacation"
               className={inputClass}
             />
@@ -528,10 +680,18 @@ function ScheduleTab() {
           <p className="text-sm text-warm-gray">No blocked dates.</p>
         ) : (
           <div className="space-y-2">
-            {blockedDates.map(d => (
-              <div key={d.id} className="flex items-center justify-between rounded-xl bg-sky/20 px-4 py-2">
+            {blockedDates.map((d) => (
+              <div
+                key={d.id}
+                className="flex items-center justify-between rounded-xl bg-sky/20 px-4 py-2"
+              >
                 <span className="text-sm">
-                  <strong>{new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
+                  <strong>
+                    {new Date(d.date + "T00:00:00").toLocaleDateString(
+                      "en-US",
+                      { weekday: "short", month: "short", day: "numeric" },
+                    )}
+                  </strong>
                   {d.start_time && d.end_time && (
                     <span className="ml-2 rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
                       {d.start_time.slice(0, 5)} – {d.end_time.slice(0, 5)}
@@ -542,7 +702,9 @@ function ScheduleTab() {
                       All day
                     </span>
                   )}
-                  {d.reason && <span className="ml-2 text-warm-gray">— {d.reason}</span>}
+                  {d.reason && (
+                    <span className="ml-2 text-warm-gray">— {d.reason}</span>
+                  )}
                 </span>
                 <button
                   onClick={() => removeBlockedDate(d.id)}
@@ -556,14 +718,14 @@ function ScheduleTab() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 interface ReminderSettings {
-  email_enabled: boolean
-  email_hours_before: number
-  sms_enabled: boolean
-  sms_hours_before: number
+  email_enabled: boolean;
+  email_hours_before: number;
+  sms_enabled: boolean;
+  sms_hours_before: number;
 }
 
 function RemindersTab() {
@@ -572,48 +734,55 @@ function RemindersTab() {
     email_hours_before: 24,
     sms_enabled: true,
     sms_hours_before: 2,
-  })
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    apiFetch<ReminderSettings>('/api/reminders/settings')
+    apiFetch<ReminderSettings>("/api/reminders/settings")
       .then(setSettings)
       .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   const save = async () => {
-    setSaving(true)
-    setSaved(false)
+    setSaving(true);
+    setSaved(false);
     try {
-      const data = await apiFetch<ReminderSettings>('/api/reminders/settings', {
-        method: 'PUT',
+      const data = await apiFetch<ReminderSettings>("/api/reminders/settings", {
+        method: "PUT",
         body: JSON.stringify(settings),
-      })
-      setSettings(data)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      });
+      setSettings(data);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch {
-      alert('Failed to save reminder settings')
+      alert("Failed to save reminder settings");
     }
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const inputClass =
-    'rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary w-20'
+    "rounded-xl border-2 border-sky bg-cream px-3 py-2 text-sm text-warm-dark outline-none transition-colors focus:border-secondary w-20";
 
   if (loading) {
-    return <div className="flex justify-center py-32"><DogLoader /></div>
+    return (
+      <div className="flex justify-center py-32">
+        <DogLoader />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border-2 border-sky bg-white p-6">
-        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">Reminder Settings</h2>
+        <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">
+          Reminder Settings
+        </h2>
         <p className="mb-6 text-sm text-warm-gray">
-          Configure automatic reminders sent to clients before their appointments.
+          Configure automatic reminders sent to clients before their
+          appointments.
         </p>
 
         <div className="space-y-5">
@@ -623,10 +792,17 @@ function RemindersTab() {
               <input
                 type="checkbox"
                 checked={settings.email_enabled}
-                onChange={e => setSettings(s => ({ ...s, email_enabled: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    email_enabled: e.target.checked,
+                  }))
+                }
                 className="h-4 w-4 rounded border-sky text-secondary"
               />
-              <span className="font-semibold text-warm-dark">Email Reminder</span>
+              <span className="font-semibold text-warm-dark">
+                Email Reminder
+              </span>
             </label>
             <div className="flex items-center gap-2 text-sm text-warm-gray">
               <input
@@ -634,7 +810,12 @@ function RemindersTab() {
                 min={1}
                 max={168}
                 value={settings.email_hours_before}
-                onChange={e => setSettings(s => ({ ...s, email_hours_before: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    email_hours_before: Number(e.target.value),
+                  }))
+                }
                 disabled={!settings.email_enabled}
                 className={`${inputClass} disabled:opacity-40`}
               />
@@ -648,7 +829,9 @@ function RemindersTab() {
               <input
                 type="checkbox"
                 checked={settings.sms_enabled}
-                onChange={e => setSettings(s => ({ ...s, sms_enabled: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((s) => ({ ...s, sms_enabled: e.target.checked }))
+                }
                 className="h-4 w-4 rounded border-sky text-secondary"
               />
               <span className="font-semibold text-warm-dark">SMS Reminder</span>
@@ -659,7 +842,12 @@ function RemindersTab() {
                 min={1}
                 max={168}
                 value={settings.sms_hours_before}
-                onChange={e => setSettings(s => ({ ...s, sms_hours_before: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    sms_hours_before: Number(e.target.value),
+                  }))
+                }
                 disabled={!settings.sms_enabled}
                 className={`${inputClass} disabled:opacity-40`}
               />
@@ -674,11 +862,13 @@ function RemindersTab() {
             disabled={saving}
             className="rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-glow disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? "Saving..." : "Save Settings"}
           </button>
-          {saved && <span className="text-sm font-semibold text-sage">Saved!</span>}
+          {saved && (
+            <span className="text-sm font-semibold text-sage">Saved!</span>
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }
