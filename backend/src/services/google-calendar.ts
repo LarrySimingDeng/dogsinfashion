@@ -136,8 +136,8 @@ export async function getCalendarBusySlots(
   if (!calendar) return []
 
   try {
-    const timeMin = `${dateStr}T00:00:00-08:00`
-    const timeMax = `${dateStr}T23:59:59-08:00`
+    const timeMin = `${dateStr}T00:00:00`
+    const timeMax = `${dateStr}T23:59:59`
 
     const res = await calendar.freebusy.query({
       requestBody: {
@@ -148,15 +148,23 @@ export async function getCalendarBusySlots(
       },
     })
 
+    const toMinutesLA = (iso: string): number => {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+      }).formatToParts(new Date(iso))
+      const h = Number(parts.find(p => p.type === 'hour')?.value ?? 0)
+      const m = Number(parts.find(p => p.type === 'minute')?.value ?? 0)
+      return h * 60 + m
+    }
+
     const busy = res.data.calendars?.[config.DORIS_CALENDAR_ID]?.busy ?? []
-    return busy.map((b: { start?: string | null; end?: string | null }) => {
-      const s = new Date(b.start!)
-      const e = new Date(b.end!)
-      return {
-        start: s.getHours() * 60 + s.getMinutes(),
-        end: e.getHours() * 60 + e.getMinutes(),
-      }
-    })
+    return busy.map((b: { start?: string | null; end?: string | null }) => ({
+      start: toMinutesLA(b.start!),
+      end: toMinutesLA(b.end!),
+    }))
   } catch (err) {
     console.error('Failed to fetch calendar busy slots:', err)
     return []
