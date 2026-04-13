@@ -76,7 +76,12 @@ availabilityRouter.post('/blocked-dates', requireAuth, requireAdmin, async (req:
   const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     reason: z.string().optional(),
-  })
+    start_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    end_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  }).refine(
+    d => (!d.start_time && !d.end_time) || (d.start_time && d.end_time),
+    { message: 'Both start_time and end_time must be provided together' }
+  )
 
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) {
@@ -86,7 +91,12 @@ availabilityRouter.post('/blocked-dates', requireAuth, requireAdmin, async (req:
 
   const { data, error } = await supabaseAdmin
     .from('blocked_dates')
-    .insert({ date: parsed.data.date, reason: parsed.data.reason ?? null })
+    .insert({
+      date: parsed.data.date,
+      reason: parsed.data.reason ?? null,
+      start_time: parsed.data.start_time ?? null,
+      end_time: parsed.data.end_time ?? null,
+    })
     .select()
     .single()
 

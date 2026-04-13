@@ -40,6 +40,8 @@ interface BlockedDate {
   id: string
   date: string
   reason: string | null
+  start_time: string | null
+  end_time: string | null
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -332,6 +334,13 @@ function ScheduleTab() {
   const [saving, setSaving] = useState(false)
   const [newBlockedDate, setNewBlockedDate] = useState('')
   const [newBlockedReason, setNewBlockedReason] = useState('')
+  const [newBlockedStartTime, setNewBlockedStartTime] = useState('')
+  const [newBlockedEndTime, setNewBlockedEndTime] = useState('')
+  const [allDay, setAllDay] = useState(false)
+  const [toasts, setToasts] = useState<ToastData[]>([])
+  const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), [])
+  const showToast = (message: string, type: ToastData['type'] = 'success') =>
+    setToasts(prev => prev.some(t => t.message === message) ? prev : [...prev, { id: Date.now(), message, type }])
 
   useEffect(() => {
     apiFetch<{ availability: AvailabilityRow[]; blockedDates: BlockedDate[] }>('/api/availability/schedule')
@@ -354,24 +363,37 @@ function ScheduleTab() {
         method: 'PUT',
         body: JSON.stringify(availability),
       })
+      showToast('Schedule saved')
     } catch {
-      alert('Failed to save schedule')
+      showToast('Failed to save schedule', 'error')
     }
     setSaving(false)
   }
 
   const addBlockedDate = async () => {
     if (!newBlockedDate) return
+    if (!allDay && (!newBlockedStartTime || !newBlockedEndTime)) {
+      showToast('Please set both start and end time', 'error')
+      return
+    }
     try {
       const data = await apiFetch<BlockedDate>('/api/availability/blocked-dates', {
         method: 'POST',
-        body: JSON.stringify({ date: newBlockedDate, reason: newBlockedReason || undefined }),
+        body: JSON.stringify({
+          date: newBlockedDate,
+          reason: newBlockedReason || undefined,
+          ...(!allDay ? { start_time: newBlockedStartTime, end_time: newBlockedEndTime } : {}),
+        }),
       })
       setBlockedDates(prev => [...prev, data])
       setNewBlockedDate('')
       setNewBlockedReason('')
+      setNewBlockedStartTime('')
+      setNewBlockedEndTime('')
+      setAllDay(false)
+      showToast('Day off added successfully')
     } catch {
-      alert('Failed to add blocked date')
+      showToast('Failed to add day off', 'error')
     }
   }
 
@@ -379,8 +401,9 @@ function ScheduleTab() {
     try {
       await apiFetch(`/api/availability/blocked-dates/${id}`, { method: 'DELETE' })
       setBlockedDates(prev => prev.filter(d => d.id !== id))
+      showToast('Day off removed')
     } catch {
-      alert('Failed to remove blocked date')
+      showToast('Failed to remove day off', 'error')
     }
   }
 
@@ -393,6 +416,7 @@ function ScheduleTab() {
 
   return (
     <div className="space-y-8">
+      <Toast toasts={toasts} onDismiss={dismissToast} />
       {/* Weekly Schedule */}
       <div className="rounded-2xl border-2 border-sky bg-white p-6">
         <h2 className="mb-4 font-display text-xl font-bold text-warm-dark">Weekly Hours</h2>
@@ -454,6 +478,35 @@ function ScheduleTab() {
             />
           </div>
           <div>
+            <label className="mb-1 block text-xs font-semibold">Time</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={newBlockedStartTime}
+                onChange={e => setNewBlockedStartTime(e.target.value)}
+                disabled={allDay}
+                className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
+              />
+              <span className={`text-warm-gray ${allDay ? 'opacity-40' : ''}`}>–</span>
+              <input
+                type="time"
+                value={newBlockedEndTime}
+                onChange={e => setNewBlockedEndTime(e.target.value)}
+                disabled={allDay}
+                className={`${inputClass} w-[6.5rem] disabled:opacity-40`}
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-1.5 pb-2">
+            <input
+              type="checkbox"
+              checked={allDay}
+              onChange={e => setAllDay(e.target.checked)}
+              className="h-4 w-4 rounded border-sky text-secondary"
+            />
+            <span className="text-sm font-semibold text-warm-dark">All Day</span>
+          </label>
+          <div>
             <label className="mb-1 block text-xs font-semibold">Reason (optional)</label>
             <input
               type="text"
@@ -479,6 +532,16 @@ function ScheduleTab() {
               <div key={d.id} className="flex items-center justify-between rounded-xl bg-sky/20 px-4 py-2">
                 <span className="text-sm">
                   <strong>{new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
+                  {d.start_time && d.end_time && (
+                    <span className="ml-2 rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
+                      {d.start_time.slice(0, 5)} – {d.end_time.slice(0, 5)}
+                    </span>
+                  )}
+                  {!d.start_time && (
+                    <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-500">
+                      All day
+                    </span>
+                  )}
                   {d.reason && <span className="ml-2 text-warm-gray">— {d.reason}</span>}
                 </span>
                 <button

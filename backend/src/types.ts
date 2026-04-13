@@ -41,6 +41,8 @@ export interface BlockedDate {
   id: string
   date: string
   reason: string | null
+  start_time: string | null
+  end_time: string | null
 }
 
 export interface TimeSlot {

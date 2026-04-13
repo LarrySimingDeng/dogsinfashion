@@ -27,11 +27,20 @@ export async function getAvailableSlots(date: string, serviceId: string, exclude
   // Check if blocked date
   const { data: blocked } = await supabaseAdmin
     .from('blocked_dates')
-    .select('id')
+    .select('id, start_time, end_time')
     .eq('date', date)
-    .limit(1)
 
-  if (blocked && blocked.length > 0) return []
+  // If any blocked entry covers the full day (no time range), return no slots
+  const fullDayBlock = (blocked ?? []).some(b => !b.start_time && !b.end_time)
+  if (fullDayBlock) return []
+
+  // Partial-day blocks will be treated as busy slots below
+  const partialBlocks = (blocked ?? [])
+    .filter(b => b.start_time && b.end_time)
+    .map(b => ({
+      start: timeToMinutes(b.start_time!),
+      end: timeToMinutes(b.end_time!),
+    }))
 
   // Get availability for this day
   const { data: availability } = await supabaseAdmin
@@ -64,6 +73,7 @@ export async function getAvailableSlots(date: string, serviceId: string, exclude
       end: timeToMinutes(b.end_time),
     })),
     ...calendarBusy,
+    ...partialBlocks,
   ]
 
   const slots: TimeSlot[] = []
