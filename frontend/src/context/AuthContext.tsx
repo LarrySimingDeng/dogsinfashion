@@ -58,25 +58,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {
-        fetchProfile(s.user.id)
+        await fetchProfile(s.user.id)
       }
       setIsLoading(false)
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, s) => {
+      async (event, s) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsRecovery(true)
         }
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
-          fetchProfile(s.user.id)
+          await fetchProfile(s.user.id)
         } else {
           setProfile(null)
         }
