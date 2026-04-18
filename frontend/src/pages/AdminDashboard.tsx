@@ -164,14 +164,23 @@ function BookingsTab() {
     } else {
       setFilterLoading(true);
     }
-    const params = statusFilter ? `?status=${statusFilter}` : "";
+    // Default to showing bookings from today onwards
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const queryParams = new URLSearchParams({ from: today });
+    if (statusFilter) {
+      queryParams.set('status', statusFilter);
+    }
+    const params = `?${queryParams.toString()}`;
+
     apiFetch<Booking[]>(`/api/bookings${params}`)
       .then((data) =>
         setBookings(
           data.sort(
             (a, b) =>
-              b.date.localeCompare(a.date) ||
-              b.start_time.localeCompare(a.start_time),
+              a.date.localeCompare(b.date) ||
+              a.start_time.localeCompare(b.start_time),
           ),
         ),
       )
