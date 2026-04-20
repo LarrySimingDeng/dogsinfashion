@@ -35,6 +35,7 @@ export default function BookingPage() {
   const [time, setTime] = useState('')
   const [dogName, setDogName] = useState('')
   const [dogBreed, setDogBreed] = useState('')
+  const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -102,7 +103,7 @@ export default function BookingPage() {
   const canNext = () => {
     if (step === 0) return !!serviceId
     if (step === 1) return !!date && !!time
-    if (step === 2) return !!dogName && !!address
+    if (step === 2) return !!dogName && !!address && /^\(\d{3}\) \d{3}-\d{4}$/.test(phone)
     return true
   }
 
@@ -131,6 +132,7 @@ export default function BookingPage() {
             start_time: time,
             dog_name: dogName,
             dog_breed: dogBreed || undefined,
+            phone: `+1 ${phone}`,
             address,
             notes: notes || undefined,
             pet_id: selectedPetId || undefined,
@@ -148,6 +150,7 @@ export default function BookingPage() {
             start_time: time,
             dog_name: dogName,
             dog_breed: dogBreed || undefined,
+            phone: `+1 ${phone}`,
             address,
             notes: notes || undefined,
             pet_id: selectedPetId || undefined,
@@ -398,6 +401,26 @@ export default function BookingPage() {
                   />
                 </div>
                 <div>
+                  <label className="mb-1.5 block text-sm font-semibold">Phone Number *</label>
+                  <div className="flex items-center gap-2">
+                    <span className="shrink-0 rounded-xl border-2 border-sky bg-sky/20 px-3 py-3 text-[0.95rem] font-semibold text-warm-gray">+1</span>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={e => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        let formatted = ''
+                        if (digits.length > 0) formatted = `(${digits.slice(0, 3)}`
+                        if (digits.length >= 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}`
+                        if (digits.length >= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+                        setPhone(formatted)
+                      }}
+                      placeholder="(916) 287-1878"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="mb-1.5 block text-sm font-semibold">Your Address *</label>
                   <input
                     type="text"
@@ -474,6 +497,10 @@ export default function BookingPage() {
                   <span className="font-semibold text-warm-dark">
                     {dogName}{dogBreed ? ` (${dogBreed})` : ''}
                   </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-warm-gray">Phone</span>
+                  <span className="font-semibold text-warm-dark">+1 {phone}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-warm-gray">Address</span>

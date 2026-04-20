@@ -48,6 +48,7 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     start_time: z.string().regex(/^\d{2}:\d{2}$/),
     dog_name: z.string().min(1),
     dog_breed: z.string().optional(),
+    phone: z.string().regex(/^\+1 \(\d{3}\) \d{3}-\d{4}$/, 'Invalid US phone number'),
     address: z.string().min(1),
     notes: z.string().optional(),
     pet_id: z.string().uuid().optional(),
@@ -60,7 +61,7 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     return
   }
 
-  const { service_id, date, start_time, dog_name, dog_breed, address, notes, pet_id, save_default_address } = parsed.data
+  const { service_id, date, start_time, dog_name, dog_breed, phone, address, notes, pet_id, save_default_address } = parsed.data
   const duration = SERVICE_DURATIONS[service_id]
   if (!duration) {
     res.status(400).json({ error: 'Invalid service_id' })
@@ -102,6 +103,7 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
       end_time,
       dog_name,
       dog_breed: dog_breed ?? null,
+      phone,
       address,
       notes: notes ?? null,
       status: 'confirmed',
@@ -170,6 +172,7 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     start_time: z.string().regex(/^\d{2}:\d{2}$/),
     dog_name: z.string().min(1),
     dog_breed: z.string().optional(),
+    phone: z.string().regex(/^\+1 \(\d{3}\) \d{3}-\d{4}$/, 'Invalid US phone number'),
     address: z.string().min(1),
     notes: z.string().optional(),
     source_id: z.string().min(1),         // Square Web SDK token
@@ -185,7 +188,7 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
   }
 
   const {
-    service_id, date, start_time, dog_name, dog_breed, address, notes,
+    service_id, date, start_time, dog_name, dog_breed, phone, address, notes,
     source_id, idempotency_key, pet_id, save_default_address,
   } = parsed.data
 
@@ -262,6 +265,7 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
       end_time,
       dog_name,
       dog_breed: dog_breed ?? null,
+      phone,
       address,
       notes: notes ?? null,
       status: 'confirmed',

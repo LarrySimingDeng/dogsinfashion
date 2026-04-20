@@ -19,6 +19,7 @@ export interface Booking {
   end_time: string
   dog_name: string
   dog_breed: string | null
+  phone: string | null
   address: string
   notes: string | null
   status: 'confirmed' | 'completed' | 'cancelled'

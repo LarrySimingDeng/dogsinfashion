@@ -57,7 +57,7 @@ function generateIcs(
     `UID:${booking.id}@dogsinfashion.com`,
     `SEQUENCE:${sequence}`,
     `SUMMARY:Dogs in Fashion: ${serviceName} — ${booking.dog_name}`,
-    `DESCRIPTION:Service: ${serviceName}\\nDog: ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}\\nAddress: ${booking.address}${booking.notes ? `\\nNotes: ${booking.notes}` : ''}`,
+    `DESCRIPTION:Service: ${serviceName}\\nDog: ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}${booking.phone ? `\\nPhone: ${booking.phone}` : ''}\\nAddress: ${booking.address}${booking.notes ? `\\nNotes: ${booking.notes}` : ''}`,
     `LOCATION:${booking.address}`,
     `ORGANIZER;CN=Dogs in Fashion:mailto:${config.DORIS_EMAIL}`,
     `ATTENDEE;CN=Client;RSVP=TRUE:mailto:${clientEmail}`,
@@ -109,6 +109,7 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
             <tr><td style="padding:8px;color:#7A7570">Dog</td><td style="padding:8px;font-weight:bold">${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}</td></tr>
             <tr><td style="padding:8px;color:#7A7570">Date</td><td style="padding:8px;font-weight:bold">${formatBookingDate(booking)}</td></tr>
             <tr><td style="padding:8px;color:#7A7570">Time</td><td style="padding:8px;font-weight:bold">${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</td></tr>
+            ${booking.phone ? `<tr><td style="padding:8px;color:#7A7570">Phone</td><td style="padding:8px;font-weight:bold">${booking.phone}</td></tr>` : ''}
             <tr><td style="padding:8px;color:#7A7570">Address</td><td style="padding:8px;font-weight:bold">${booking.address}</td></tr>
           </table>
           <p>Doris will arrive at your location at the scheduled time. If you need to make changes, please visit <a href="https://www.dogsinfashion.com/my-bookings">My Bookings</a> or contact Doris directly.</p>
@@ -206,6 +207,7 @@ export async function notifyDorisNewBooking(booking: Booking, clientEmail: strin
           <p><strong>Time:</strong> ${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</p>
           <p><strong>Address:</strong> ${booking.address}</p>
           <p><strong>Client Email:</strong> ${clientEmail}</p>
+          ${booking.phone ? `<p><strong>Client Phone:</strong> ${booking.phone}</p>` : ''}
           ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
         </div>
       `,
@@ -246,6 +248,7 @@ export async function sendRescheduleNotification(
             <tr><td style="padding:8px;color:#7A7570">New Date</td><td style="padding:8px;font-weight:bold">${formatBookingDate(booking)}</td></tr>
             <tr><td style="padding:8px;color:#7A7570">New Time</td><td style="padding:8px;font-weight:bold">${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</td></tr>
             <tr><td style="padding:8px;color:#7A7570">Previous</td><td style="padding:8px;color:#7A7570;text-decoration:line-through">${oldDateDisplay} at ${formatTime(oldStartTime)}</td></tr>
+            ${booking.phone ? `<tr><td style="padding:8px;color:#7A7570">Phone</td><td style="padding:8px;font-weight:bold">${booking.phone}</td></tr>` : ''}
             <tr><td style="padding:8px;color:#7A7570">Address</td><td style="padding:8px;font-weight:bold">${booking.address}</td></tr>
           </table>
           <p>If you have any questions, please visit <a href="https://www.dogsinfashion.com/my-bookings">My Bookings</a> or contact Doris directly.</p>
@@ -288,6 +291,7 @@ export async function notifyDorisReschedule(
           <p style="color:#7A7570"><strong>Previous:</strong> ${oldDateDisplay} at ${formatTime(oldStartTime)}</p>
           <p><strong>Address:</strong> ${booking.address}</p>
           <p><strong>Client Email:</strong> ${clientEmail}</p>
+          ${booking.phone ? `<p><strong>Client Phone:</strong> ${booking.phone}</p>` : ''}
           ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
         </div>
       `,
@@ -395,6 +399,7 @@ export async function notifyDorisCancellation(
           <p><strong>Time:</strong> ${formatTime(booking.start_time)} — ${formatTime(booking.end_time)}</p>
           <p><strong>Address:</strong> ${booking.address}</p>
           <p><strong>Client Email:</strong> ${clientEmail}</p>
+          ${booking.phone ? `<p><strong>Client Phone:</strong> ${booking.phone}</p>` : ''}
           <p style="color:#7A7570;font-size:13px;margin-top:16px">Customer has been notified via email. Google Calendar event has been removed.</p>
         </div>
       `,

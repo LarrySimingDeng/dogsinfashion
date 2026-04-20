@@ -30,6 +30,7 @@ function buildEventDescription(booking: Booking, clientEmail?: string): string {
   return [
     `Service: ${serviceName}`,
     `Dog: ${booking.dog_name}${booking.dog_breed ? ` (${booking.dog_breed})` : ''}`,
+    booking.phone ? `Phone: ${booking.phone}` : '',
     `Address: ${booking.address}`,
     booking.notes ? `Notes: ${booking.notes}` : '',
     clientEmail ? `Client: ${clientEmail}` : '',

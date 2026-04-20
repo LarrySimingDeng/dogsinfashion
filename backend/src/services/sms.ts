@@ -27,7 +27,7 @@ export async function notifyDorisSms(booking: Booking): Promise<void> {
 
   try {
     await client.messages.create({
-      body: `New booking: ${booking.dog_name} — ${serviceName}, ${dateStr} at ${formatTime(booking.start_time)}, ${booking.address}`,
+      body: `New booking: ${booking.dog_name} — ${serviceName}, ${dateStr} at ${formatTime(booking.start_time)}, ${booking.address}${booking.phone ? `, Phone: ${booking.phone}` : ''}`,
       from: config.TWILIO_PHONE_NUMBER,
       to: config.DORIS_PHONE,
     })
