@@ -312,8 +312,7 @@ export async function notifyDorisReschedule(
 export async function sendThankYouEmail(booking: Booking, clientEmail: string): Promise<void> {
   if (!resend) return
 
-  // Yelp search fallback — swap for the real business page URL once it exists.
-  const yelpUrl = 'https://www.yelp.com/search?find_desc=Dogs+in+Fashion'
+  const yelpUrl = 'https://www.yelp.com/writeareview/biz/wGt2GBEFz2rO6waGxrqfsA'
 
   try {
     const { error } = await resend.emails.send({
@@ -322,36 +321,41 @@ export async function sendThankYouEmail(booking: Booking, clientEmail: string): 
       replyTo: config.DORIS_EMAIL,
       subject: `Thank you for trusting us with ${booking.dog_name} 🐾`,
       html: `
-        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
-          <h2 style="color:#5BA4D9">Thank you from Dogs in Fashion</h2>
-          <p>Hi there,</p>
-          <p>
-            It was such a joy taking care of <strong>${booking.dog_name}</strong> today.
-            Thank you for trusting us with your pup — we don't take that lightly,
-            and every wag and wiggle we get is the reason we keep doing what we do.
-          </p>
-          <div style="background:#FFF4E5;border-left:4px solid #E8975E;border-radius:8px;padding:16px 18px;margin:20px 0">
-            <p style="margin:0 0 8px;font-weight:bold;color:#2A2420">A little something for next time ⭐</p>
-            <p style="margin:0 0 10px;color:#2A2420;font-size:14px;line-height:1.5">
-              If you had a great experience, we'd love it if you'd leave us a
-              <strong>5-star review on Yelp with a photo</strong> of your freshly-groomed pup.
-            </p>
-            <p style="margin:0;color:#2A2420;font-size:14px;line-height:1.5">
-              Show us the screenshot on your next visit and we'll take
-              <strong>$5 off</strong> as a thank-you. 💛
-            </p>
-            <p style="margin:12px 0 0">
-              <a href="${yelpUrl}" style="display:inline-block;background:#D32323;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:bold;font-size:14px">
-                Leave a Yelp review
-              </a>
-            </p>
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;background:#FAFAF7;padding:36px 32px;border-radius:14px;color:#2A2420">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="font-size:32px;line-height:1;margin-bottom:8px">🐾</div>
+            <h1 style="color:#5BA4D9;margin:0;font-size:24px;font-weight:600;letter-spacing:-0.3px">Thank you from Dogs in Fashion</h1>
           </div>
-          <p>
+
+          <p style="font-size:16px;line-height:1.65;margin:0 0 16px">Hi there,</p>
+
+          <p style="font-size:16px;line-height:1.7;margin:0 0 28px">
+            It was such a joy taking care of <strong>${booking.dog_name}</strong> today!
+            Thank you for trusting us with your pup! We don't take that lightly,
+            and every wag and wiggle is the reason we keep doing what we do. :)
+          </p>
+
+          <div style="background:#FFF4E5;border-radius:12px;padding:24px 22px;margin:0 0 28px;text-align:center">
+            <p style="margin:0 0 6px;font-weight:600;color:#2A2420;font-size:15px">Loved your visit? ⭐</p>
+            <p style="margin:0 0 18px;color:#5A4F42;font-size:14px;line-height:1.6">
+              A <strong>5-star review on Yelp</strong> with a photo of your
+              freshly-groomed pup would truly make our week.
+            </p>
+            <a href="${yelpUrl}" style="display:inline-block;background:#D32323;color:#ffffff;padding:12px 26px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;letter-spacing:0.2px">
+              Leave a Yelp review →
+            </a>
+          </div>
+
+          <p style="font-size:16px;line-height:1.7;margin:0">
             Gratuity is always appreciated and goes a long way in keeping us
-            motivated to bring our very best to every pup. Thank you again — we
+            motivated to bring our very best to every pup. Thank you again, we
             can't wait to see ${booking.dog_name} next time.
           </p>
-          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
+
+          <div style="border-top:1px solid #E8E4DD;margin-top:32px;padding-top:20px;text-align:center">
+            <p style="color:#2A2420;font-size:14px;font-weight:600;margin:0">Doris · Dogs in Fashion</p>
+            <p style="color:#7A7570;font-size:13px;margin:4px 0 0">(916) 287-1878 · contact@dogsinfashion.com</p>
+          </div>
         </div>
       `,
     })
