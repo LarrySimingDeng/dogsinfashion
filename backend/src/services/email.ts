@@ -309,6 +309,58 @@ export async function notifyDorisReschedule(
   }
 }
 
+export async function sendThankYouEmail(booking: Booking, clientEmail: string): Promise<void> {
+  if (!resend) return
+
+  // Yelp search fallback — swap for the real business page URL once it exists.
+  const yelpUrl = 'https://www.yelp.com/search?find_desc=Dogs+in+Fashion'
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: clientEmail,
+      replyTo: config.DORIS_EMAIL,
+      subject: `Thank you for trusting us with ${booking.dog_name} 🐾`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
+          <h2 style="color:#5BA4D9">Thank you from Dogs in Fashion</h2>
+          <p>Hi there,</p>
+          <p>
+            It was such a joy taking care of <strong>${booking.dog_name}</strong> today.
+            Thank you for trusting us with your pup — we don't take that lightly,
+            and every wag and wiggle we get is the reason we keep doing what we do.
+          </p>
+          <div style="background:#FFF4E5;border-left:4px solid #E8975E;border-radius:8px;padding:16px 18px;margin:20px 0">
+            <p style="margin:0 0 8px;font-weight:bold;color:#2A2420">A little something for next time ⭐</p>
+            <p style="margin:0 0 10px;color:#2A2420;font-size:14px;line-height:1.5">
+              If you had a great experience, we'd love it if you'd leave us a
+              <strong>5-star review on Yelp with a photo</strong> of your freshly-groomed pup.
+            </p>
+            <p style="margin:0;color:#2A2420;font-size:14px;line-height:1.5">
+              Show us the screenshot on your next visit and we'll take
+              <strong>$5 off</strong> as a thank-you. 💛
+            </p>
+            <p style="margin:12px 0 0">
+              <a href="${yelpUrl}" style="display:inline-block;background:#D32323;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:bold;font-size:14px">
+                Leave a Yelp review
+              </a>
+            </p>
+          </div>
+          <p>
+            Gratuity is always appreciated and goes a long way in keeping us
+            motivated to bring our very best to every pup. Thank you again — we
+            can't wait to see ${booking.dog_name} next time.
+          </p>
+          <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
+        </div>
+      `,
+    })
+    if (error) throw error
+  } catch (err) {
+    console.error('Failed to send thank-you email:', err)
+  }
+}
+
 export async function sendReminderEmail(booking: Booking, clientEmail: string): Promise<void> {
   if (!resend) return
 

@@ -46,9 +46,15 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
   const days = getDaysInMonth(viewYear, viewMonth)
   const firstDow = days[0]!.getDay()
 
-  // Max date: end of next month (e.g., today 04/21 → 05/31)
+  // Booking window: end of next month (e.g., today 04/21 → 05/31).
+  // Past this date, users can still browse the calendar but can't book — we
+  // show a "not yet open" message instead of fetching slots.
   const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 0)
   maxDate.setHours(0, 0, 0, 0)
+
+  // Browse window: through December of the current calendar year.
+  const browseMaxYear = today.getFullYear()
+  const browseMaxMonth = 11
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
@@ -60,10 +66,21 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
     else setViewMonth(m => m + 1)
   }
 
+  const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : null
+  const selectedBeyondBookingWindow = !!selectedDateObj && selectedDateObj > maxDate
+
   // Fetch slots when date or service changes
   useEffect(() => {
     if (!selectedDate || !serviceId) {
       setSlots([])
+      return
+    }
+
+    // Don't hit the API for dates outside our booking window.
+    const d = new Date(selectedDate + 'T00:00:00')
+    if (d > maxDate) {
+      setSlots([])
+      setLoadingSlots(false)
       return
     }
 
@@ -84,6 +101,7 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
       cancelled = true
       controller.abort()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, serviceId, excludeBookingId])
 
   const formatTimeDisplay = (time: string) => {
@@ -95,7 +113,7 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
 
   const canGoPrev = viewYear > today.getFullYear() || viewMonth > today.getMonth()
   const canGoNext =
-    viewYear * 12 + viewMonth < maxDate.getFullYear() * 12 + maxDate.getMonth()
+    viewYear * 12 + viewMonth < browseMaxYear * 12 + browseMaxMonth
 
   return (
     <div className="space-y-6">
@@ -134,22 +152,23 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
           {days.map(day => {
             const dateStr = formatDate(day)
             const isPast = day < today
-            const isFuture = day > maxDate
+            const beyondBooking = day > maxDate
             const isSelected = dateStr === selectedDate
-            const disabled = isPast || isFuture
 
             return (
               <button
                 key={dateStr}
                 type="button"
                 onClick={() => { onDateChange(dateStr); onTimeChange('') }}
-                disabled={disabled}
+                disabled={isPast}
                 className={`rounded-lg py-2 text-sm transition-colors ${
                   isSelected
                     ? 'bg-secondary font-bold text-white'
-                    : disabled
+                    : isPast
                       ? 'text-warm-gray/40'
-                      : 'font-medium text-warm-dark hover:bg-sky/40'
+                      : beyondBooking
+                        ? 'font-medium text-warm-gray/60 hover:bg-sky/30'
+                        : 'font-medium text-warm-dark hover:bg-sky/40'
                 }`}
               >
                 {day.getDate()}
@@ -167,7 +186,11 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
             {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h4>
 
-          {loadingSlots ? (
+          {selectedBeyondBookingWindow ? (
+            <div className="rounded-xl bg-butter/40 px-4 py-3 text-sm text-warm-dark">
+              Booking isn't open for this date yet. Please choose another day.
+            </div>
+          ) : loadingSlots ? (
             <div className="flex items-center gap-2 text-sm text-warm-gray">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
               Loading available times...

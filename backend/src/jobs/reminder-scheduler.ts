@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../services/supabase.js'
-import { sendReminderEmail } from '../services/email.js'
+import { sendReminderEmail, sendThankYouEmail } from '../services/email.js'
 import { sendSmsReminder } from '../services/sms.js'
 import type { Booking } from '../types.js'
 import { SERVICE_NAMES } from '../data/services.js'
@@ -49,6 +49,21 @@ export async function scheduleReminders(booking: Booking, clientEmail: string): 
       booking_id: booking.id,
       type: 'email',
       scheduled_at: emailTime.toISOString(),
+      status: 'pending',
+      metadata: JSON.stringify({ client_email: clientEmail }),
+    })
+  }
+
+  // Thank-you email — fires 30 min after the booking ends. Pure copy + Yelp
+  // incentive; not gated by settings since it's transactional follow-up.
+  const normEndTime = booking.end_time ? normTime(booking.end_time) : null
+  if (normEndTime) {
+    const endDateTime = new Date(`${booking.date}T${normEndTime}`)
+    const thankYouTime = new Date(endDateTime.getTime() + 30 * 60 * 1000)
+    reminders.push({
+      booking_id: booking.id,
+      type: 'thank_you',
+      scheduled_at: thankYouTime.toISOString(),
       status: 'pending',
       metadata: JSON.stringify({ client_email: clientEmail }),
     })
@@ -114,6 +129,8 @@ export async function processPendingReminders(): Promise<void> {
 
       if (reminder.type === 'email' && meta.client_email) {
         await sendReminderEmail(booking, meta.client_email)
+      } else if (reminder.type === 'thank_you' && meta.client_email) {
+        await sendThankYouEmail(booking, meta.client_email)
       } else if (reminder.type === 'sms' && meta.phone) {
         const serviceName = SERVICE_NAMES[booking.service_id] ?? booking.service_id
         const d = new Date(`${booking.date}T00:00:00`)
