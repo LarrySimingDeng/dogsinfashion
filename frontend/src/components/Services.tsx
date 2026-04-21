@@ -21,8 +21,8 @@ export default function Services({ onBookService }: Props) {
           Choose Your Pup's Pampering
         </h2>
         <p className="text-[1.05rem] text-warm-gray">
-          Choose a bath for a fresh clean, or a full groom for the complete
-          pampering experience.
+          Go Essential with our Bath, or step up to the Luxury Full Groom.
+          Every service ships with a free ear cleaning gift.
         </p>
       </div>
 

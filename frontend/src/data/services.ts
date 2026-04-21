@@ -20,6 +20,27 @@ export const SIZE_WEIGHT_RANGES: Record<'small' | 'medium' | 'large', string> = 
   large: 'Over 50 lbs',
 }
 
+const BATH_ESSENTIAL_FEATURES = [
+  'Warm hand bath',
+  'Premium shampoo',
+  'Conditioner treatment',
+  'Blow dry',
+  'Brush out',
+  'Ear cleaning — FREE gift',
+]
+
+const GROOM_LUXURY_FEATURES = [
+  'Full-body haircut & styling',
+  'De-shedding treatment',
+  'Premium shampoo & conditioner',
+  'Blow dry & brush out',
+  'De-matting & mat removal',
+  'Face trim',
+  'Paw trim',
+  'Sanitary trim',
+  'Ear cleaning — FREE gift',
+]
+
 export const services: ServiceTier[] = [
   {
     id: 'bath-small',
@@ -31,14 +52,8 @@ export const services: ServiceTier[] = [
     duration: 1,
     price: 70,
     description:
-      'A refreshing bath for small pups — shampoo, blow dry, nail trim, and all the finishing touches.',
-    features: [
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'Our Essential bath for small pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
+    features: BATH_ESSENTIAL_FEATURES,
     accentColor: 'sky-deep',
   },
   {
@@ -51,17 +66,8 @@ export const services: ServiceTier[] = [
     duration: 2,
     price: 110,
     description:
-      'Complete grooming for small pups: bath, haircut, styling, and all the finishing touches with extra gentleness.',
-    features: [
-      'Full-body haircut & styling',
-      'De-shedding treatment',
-      'Face, paw & sanitary trim',
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'The Luxury experience for small pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim.',
+    features: GROOM_LUXURY_FEATURES,
     accentColor: 'sky-deep',
   },
   {
@@ -74,14 +80,8 @@ export const services: ServiceTier[] = [
     duration: 1,
     price: 85,
     description:
-      'A thorough bath for medium-sized pups. Clean, fresh, and ready to cuddle.',
-    features: [
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'Our Essential bath for medium pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
+    features: BATH_ESSENTIAL_FEATURES,
     accentColor: 'butter',
   },
   {
@@ -94,17 +94,8 @@ export const services: ServiceTier[] = [
     duration: 2,
     price: 140,
     description:
-      'The full spa experience for medium-sized pups. Everything they need to look and feel amazing, from nose to tail.',
-    features: [
-      'Full-body haircut & styling',
-      'De-shedding treatment',
-      'Face, paw & sanitary trim',
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'The Luxury experience for medium pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim.',
+    features: GROOM_LUXURY_FEATURES,
     accentColor: 'butter',
   },
   {
@@ -117,14 +108,8 @@ export const services: ServiceTier[] = [
     duration: 1,
     price: 110,
     description:
-      'A deep-clean bath for bigger pups. Premium products and extra care for their coat.',
-    features: [
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'Our Essential bath for bigger pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
+    features: BATH_ESSENTIAL_FEATURES,
     accentColor: 'peach',
   },
   {
@@ -137,18 +122,61 @@ export const services: ServiceTier[] = [
     duration: 2,
     price: 185,
     description:
-      'Extra time and care for bigger pups. Includes de-shedding treatment. No rushing, no stress, just love.',
-    features: [
-      'Full-body haircut & styling',
-      'De-shedding treatment',
-      'Face, paw & sanitary trim',
-      'Premium shampoo & conditioner',
-      'Blow dry & brush out',
-      'Ear cleaning & nail trim',
-      'Teeth brushing',
-      'Bandana or bow',
-    ],
+      'The Luxury experience for bigger pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim. No rushing, no stress.',
+    features: GROOM_LUXURY_FEATURES,
     accentColor: 'peach',
+  },
+]
+
+export interface AddOn {
+  id: string
+  name: string
+  price: string
+  description: string
+}
+
+export const addOns: AddOn[] = [
+  {
+    id: 'nail-trim',
+    name: 'Nail Trim',
+    price: '$12',
+    description:
+      "Helps prevent painful splaying & splitting of your dog's nails.",
+  },
+  {
+    id: 'nail-grind',
+    name: 'Nail Grind + Trim',
+    price: '$19',
+    description:
+      'Smooths out rough edges to reduce scratches while keeping nails shorter for longer.',
+  },
+  {
+    id: 'teeth-brushing',
+    name: 'Teeth Brushing & Breath Freshener',
+    price: '$12',
+    description:
+      'Whitening & tartar-control gel to prevent build-up, plus a minty breath freshener.',
+  },
+  {
+    id: 'anal-gland',
+    name: 'Anal Gland Expression',
+    price: '$12',
+    description:
+      'External check of anal sacs to help prevent build-up of fluid that can cause irritation.',
+  },
+  {
+    id: 'deep-conditioner',
+    name: 'Deep Coat Conditioner',
+    price: '$18',
+    description:
+      'Deep-nourishing conditioning treatment for healthier, shinier coats.',
+  },
+  {
+    id: 'paw-balm',
+    name: 'Paw & Nose Balm',
+    price: '$10',
+    description:
+      'Soothing balm for dry, cracked paw pads and noses.',
   },
 ]
 
