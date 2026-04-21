@@ -70,7 +70,7 @@ export default function BookingCTA({ preselectedService }: Props) {
                 <optgroup key={size} label={`${first.label} (${first.weightRange})`}>
                   {sizeServices.map(s => (
                     <option key={s.id} value={s.id}>
-                      {s.name} — ${s.price}
+                      {s.type === 'bath' ? 'Bath' : 'Full Groom'} ({s.label}) ${s.price}
                     </option>
                   ))}
                 </optgroup>
