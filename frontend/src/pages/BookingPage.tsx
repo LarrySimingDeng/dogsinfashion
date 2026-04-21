@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Check, ArrowLeft, ArrowRight, Calendar, Lock, Plus } from 'lucide-react'
+import { Check, ArrowLeft, ArrowRight, Calendar, Lock, Plus, HandHeart } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { services, getServiceById, formatDuration } from '../data/services'
 
@@ -196,10 +196,15 @@ export default function BookingPage() {
           <h2 className="mb-2 font-display text-2xl font-bold text-warm-dark">
             Booking Confirmed!
           </h2>
-          <p className="mb-6 text-warm-gray">
+          <p className="mb-4 text-warm-gray">
             Your {selectedService?.name} appointment on{' '}
             {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}{' '}
             has been confirmed.
+          </p>
+          <p className="mx-auto mb-6 max-w-[400px] text-xs italic leading-relaxed text-warm-gray/90">
+            A gratuity is always appreciated — 15–25% is the industry standard
+            for grooming services. Your support is our biggest motivation to
+            keep bringing our very best to every pup.
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -512,6 +517,20 @@ export default function BookingPage() {
                     <span className="text-right font-semibold text-warm-dark">{notes}</span>
                   </div>
                 )}
+              </div>
+
+              <div className="mt-6 flex gap-3 rounded-2xl bg-butter/30 p-5">
+                <HandHeart className="mt-0.5 h-5 w-5 flex-shrink-0 text-peach" />
+                <div>
+                  <p className="mb-1 text-sm font-bold text-warm-dark">
+                    A gratuity is always appreciated
+                  </p>
+                  <p className="text-xs leading-relaxed text-warm-gray">
+                    15–25% is the industry standard for grooming services.
+                    Your support is our biggest motivation to keep bringing our
+                    very best to every pup.
+                  </p>
+                </div>
               </div>
 
               {DEPOSIT_REQUIRED && (

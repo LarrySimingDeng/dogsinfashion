@@ -46,9 +46,9 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
   const days = getDaysInMonth(viewYear, viewMonth)
   const firstDow = days[0]!.getDay()
 
-  // Max date: 30 days from now
-  const maxDate = new Date(today)
-  maxDate.setDate(maxDate.getDate() + 30)
+  // Max date: end of next month (e.g., today 04/21 → 05/31)
+  const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+  maxDate.setHours(0, 0, 0, 0)
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
@@ -94,6 +94,8 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
   }
 
   const canGoPrev = viewYear > today.getFullYear() || viewMonth > today.getMonth()
+  const canGoNext =
+    viewYear * 12 + viewMonth < maxDate.getFullYear() * 12 + maxDate.getMonth()
 
   return (
     <div className="space-y-6">
@@ -114,7 +116,8 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
           <button
             type="button"
             onClick={nextMonth}
-            className="rounded-lg p-1.5 hover:bg-sky/40"
+            disabled={!canGoNext}
+            className="rounded-lg p-1.5 hover:bg-sky/40 disabled:opacity-30"
           >
             <ChevronRight className="h-5 w-5" />
           </button>

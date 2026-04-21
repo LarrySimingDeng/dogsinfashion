@@ -112,6 +112,13 @@ export async function sendBookingConfirmation(booking: Booking, clientEmail: str
             ${booking.phone ? `<tr><td style="padding:8px;color:#7A7570">Phone</td><td style="padding:8px;font-weight:bold">${booking.phone}</td></tr>` : ''}
             <tr><td style="padding:8px;color:#7A7570">Address</td><td style="padding:8px;font-weight:bold">${booking.address}</td></tr>
           </table>
+          <div style="background:#FFF4E5;border-left:4px solid #E8975E;border-radius:8px;padding:14px 18px;margin:20px 0">
+            <p style="margin:0 0 6px;font-weight:bold;color:#2A2420">A little tip goes a long way 🐾</p>
+            <p style="margin:0;color:#7A7570;font-size:14px;line-height:1.5">
+              Gratuity is always appreciated — <strong>15–25% is the industry standard</strong> for grooming services.
+              Your support is what motivates us to keep showing up for every pup with care, patience, and our very best work. Thank you for choosing Dogs in Fashion.
+            </p>
+          </div>
           <p>Doris will arrive at your location at the scheduled time. If you need to make changes, please visit <a href="https://www.dogsinfashion.com/my-bookings">My Bookings</a> or contact Doris directly.</p>
           <p style="color:#7A7570;font-size:14px">Doris — (916) 287-1878 — contact@dogsinfashion.com</p>
         </div>
