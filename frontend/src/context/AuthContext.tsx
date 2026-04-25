@@ -48,44 +48,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearRecovery = useCallback(() => setIsRecovery(false), [])
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data as Profile | null)
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      setProfile(data as Profile | null)
+    } catch (err) {
+      console.error('Failed to fetch profile:', err)
+      setProfile(null)
+    }
   }, [])
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) {
-        await fetchProfile(s.user.id)
-      }
-      setIsLoading(false)
-    })
+    let mounted = true
 
-    // Listen for auth changes
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return
+        setSession(s)
+        setUser(s?.user ?? null)
+        // No user → no profile to wait for; release the loading gate now.
+        // With a user, the profile effect below clears isLoading.
+        if (!s?.user) setIsLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to get initial session:', err)
+        if (mounted) setIsLoading(false)
+      })
+
+    // Keep this callback synchronous. Awaiting a Supabase call here
+    // deadlocks the auth lock during TOKEN_REFRESHED on returning visits.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, s) => {
+      (event, s) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsRecovery(true)
         }
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) {
-          await fetchProfile(s.user.id)
-        } else {
+        if (!s?.user) {
           setProfile(null)
+          setIsLoading(false)
         }
-        setIsLoading(false)
       },
     )
 
-    return () => subscription.unsubscribe()
-  }, [fetchProfile])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  // Profile fetch lives outside onAuthStateChange to avoid the auth-lock
+  // deadlock. It also owns clearing isLoading on the "has user" path.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        if (!cancelled) setProfile(data as Profile | null)
+      } catch (err) {
+        console.error('Failed to fetch profile:', err)
+        if (!cancelled) setProfile(null)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [user?.id])
 
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
@@ -94,8 +130,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id, fetchProfile])
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut()
+    // Clear local state immediately so the UI updates even if the network
+    // logout hangs or 403s (expired refresh token).
+    setUser(null)
+    setSession(null)
     setProfile(null)
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
   }, [])
 
   return (
