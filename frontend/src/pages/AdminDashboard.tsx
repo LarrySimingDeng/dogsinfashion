@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Calendar,
+  CalendarPlus,
   Clock,
   Settings,
   Filter,
@@ -21,6 +22,7 @@ import RescheduleModal from "../components/RescheduleModal";
 import Toast, { ToastData } from "../components/Toast";
 import DatePicker from "../components/DatePicker";
 import TimePicker from "../components/TimePicker";
+import CreateBookingTab from "../components/admin/CreateBookingTab";
 
 interface Booking {
   id: string;
@@ -69,7 +71,7 @@ const DAYS = [
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState<
-    "analytics" | "bookings" | "schedule" | "reminders"
+    "analytics" | "bookings" | "create-booking" | "schedule" | "reminders"
   >("bookings");
 
   return (
@@ -90,6 +92,16 @@ export default function AdminDashboard() {
             }`}
           >
             <Calendar className="h-4 w-4" /> Bookings
+          </button>
+          <button
+            onClick={() => setTab("create-booking")}
+            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
+              tab === "create-booking"
+                ? "bg-secondary text-white"
+                : "bg-sky/30 text-warm-dark hover:bg-sky/50"
+            }`}
+          >
+            <CalendarPlus className="h-4 w-4" /> Create Booking
           </button>
           <button
             onClick={() => setTab("schedule")}
@@ -127,6 +139,8 @@ export default function AdminDashboard() {
           <AnalyticsTab />
         ) : tab === "bookings" ? (
           <BookingsTab />
+        ) : tab === "create-booking" ? (
+          <CreateBookingTab />
         ) : tab === "schedule" ? (
           <ScheduleTab />
         ) : (

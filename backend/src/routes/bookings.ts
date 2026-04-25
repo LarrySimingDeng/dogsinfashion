@@ -648,3 +648,118 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
     .then(() => scheduleReminders(updated, clientEmail))
     .catch(err => console.error('Reschedule reminders failed:', err))
 })
+
+// Admin creates a booking on behalf of a registered user. No deposit, no
+// Square. The DEPOSIT_REQUIRED feature flag is intentionally NOT checked here
+// — admin bookings are always free of deposit by design.
+bookingsRouter.post('/admin', requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+  const schema = z.object({
+    target_user_id: z.string().uuid(),
+    service_id: z.string().min(1),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    start_time: z.string().regex(/^\d{2}:\d{2}$/),
+    dog_name: z.string().min(1),
+    dog_breed: z.string().optional(),
+    phone: z.string().regex(/^\+1 \(\d{3}\) \d{3}-\d{4}$/, 'Invalid US phone number'),
+    address: z.string().min(1),
+    notes: z.string().optional(),
+    pet_id: z.string().uuid().optional(),
+  })
+
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request body', details: parsed.error.flatten() })
+    return
+  }
+
+  const { target_user_id, service_id, date, start_time, dog_name, dog_breed, phone, address, notes, pet_id } = parsed.data
+
+  console.log('[admin-booking]', JSON.stringify({
+    admin_id: req.user!.id,
+    target_user_id,
+    service_id,
+    date,
+    start_time,
+  }))
+
+  const duration = SERVICE_DURATIONS[service_id]
+  if (!duration) {
+    res.status(400).json({ error: 'Invalid service_id' })
+    return
+  }
+
+  if (pet_id) {
+    const { data: pet } = await supabaseAdmin
+      .from('pets')
+      .select('id')
+      .eq('id', pet_id)
+      .eq('user_id', target_user_id)
+      .is('archived_at', null)
+      .single()
+    if (!pet) {
+      res.status(400).json({ error: 'Invalid pet_id' })
+      return
+    }
+  }
+
+  const end_time = addMinutesToTime(start_time, duration * 60)
+
+  const available = await getAvailableSlots(date, service_id)
+  const isAvailable = available.some(s => s.start === start_time)
+  if (!isAvailable) {
+    res.status(409).json({ error: 'This time slot is no longer available' })
+    return
+  }
+
+  const { data: { user: targetUser }, error: targetErr } = await supabaseAdmin.auth.admin.getUserById(target_user_id)
+  if (targetErr || !targetUser?.email) {
+    res.status(400).json({ error: 'Target user not found' })
+    return
+  }
+  const targetEmail = targetUser.email
+
+  const { data: booking, error } = await supabaseAdmin
+    .from('bookings')
+    .insert({
+      user_id: target_user_id,
+      service_id,
+      date,
+      start_time,
+      end_time,
+      dog_name,
+      dog_breed: dog_breed ?? null,
+      phone,
+      address,
+      notes: notes ?? null,
+      status: 'confirmed',
+      deposit_status: 'none',
+      pet_id: pet_id ?? null,
+      created_by_admin_id: req.user!.id,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    res.status(500).json({ error: error.message })
+    return
+  }
+
+  // Await calendar event creation to prevent race with sync job.
+  try {
+    const eventId = await createCalendarEvent(booking, targetEmail)
+    if (eventId) {
+      await supabaseAdmin.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id)
+      booking.google_event_id = eventId
+    }
+  } catch (err) {
+    console.error('[admin-booking] Calendar event failed:', err)
+  }
+
+  // Fire-and-forget — same downstream as user POST.
+  sendBookingConfirmation(booking, targetEmail).catch(err => console.error('[admin-booking] Confirmation email failed:', err))
+  notifyDorisNewBooking(booking, targetEmail).catch(err => console.error('[admin-booking] Doris email failed:', err))
+  notifyDorisSms(booking).catch(err => console.error('[admin-booking] Doris SMS failed:', err))
+  scheduleReminders(booking, targetEmail).catch(err => console.error('[admin-booking] Schedule reminders failed:', err))
+
+  res.status(201).json({ booking })
+})

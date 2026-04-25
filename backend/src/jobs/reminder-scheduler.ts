@@ -69,22 +69,29 @@ export async function scheduleReminders(booking: Booking, clientEmail: string): 
     })
   }
 
-  // SMS reminder — only if enabled AND client has phone
+  // SMS reminder — only if enabled AND we have a phone for the client.
+  // Prefer the phone the user entered for THIS booking. profiles.phone is
+  // rarely populated (no edit-profile UI exists; signup doesn't ask), so
+  // falling back to it would silently drop SMS for most users.
   if (settings.sms_enabled) {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('phone')
-      .eq('id', booking.user_id)
-      .single()
+    let smsPhone: string | null = booking.phone ?? null
+    if (!smsPhone) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('phone')
+        .eq('id', booking.user_id)
+        .single()
+      smsPhone = profile?.phone ?? null
+    }
 
-    if (profile?.phone) {
+    if (smsPhone) {
       const smsTime = new Date(bookingDateTime.getTime() - settings.sms_hours_before * 60 * 60 * 1000)
       reminders.push({
         booking_id: booking.id,
         type: 'sms',
         scheduled_at: smsTime.toISOString(),
         status: 'pending',
-        metadata: JSON.stringify({ phone: profile.phone }),
+        metadata: JSON.stringify({ phone: smsPhone }),
       })
     }
   }

@@ -12,6 +12,7 @@ import {
 } from '../components/SquarePaymentForm'
 import PetAvatar from '../components/PetAvatar'
 import { apiFetch } from '../lib/api'
+import { maskPhoneInput } from '../lib/phone'
 import { useAuth } from '../context/AuthContext'
 import type { Pet } from '../types/pet'
 
@@ -420,14 +421,7 @@ export default function BookingPage() {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={e => {
-                        const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
-                        let formatted = ''
-                        if (digits.length > 0) formatted = `(${digits.slice(0, 3)}`
-                        if (digits.length >= 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}`
-                        if (digits.length >= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
-                        setPhone(formatted)
-                      }}
+                      onChange={e => setPhone(maskPhoneInput(e.target.value))}
                       placeholder="(916) 287-1878"
                       className={inputClass}
                     />
