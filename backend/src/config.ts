@@ -32,6 +32,11 @@ const envSchema = z.object({
   SQUARE_LOCATION_ID: z.string().optional(),
   SQUARE_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   LARRY_ALERT_EMAIL: z.string().email().optional(),
+
+  // Booking lead time: customers must book at least N days in advance (calendar
+  // days, computed in Pacific Time). Admins can override per booking via the
+  // "emergency booking" toggle in the admin Create Booking tab.
+  MIN_BOOKING_LEAD_DAYS: z.coerce.number().int().min(0).default(2),
 })
 
 function loadConfig() {

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase.js'
 import { getCalendarBusySlots } from './google-calendar.js'
+import { isBeforeEarliestBookingDate } from './booking-time.js'
 import type { TimeSlot } from '../types.js'
 import { SERVICE_DURATIONS } from '../data/services.js'
 
@@ -16,9 +17,17 @@ function minutesToTime(mins: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-export async function getAvailableSlots(date: string, serviceId: string, excludeBookingId?: string): Promise<TimeSlot[]> {
+export async function getAvailableSlots(
+  date: string,
+  serviceId: string,
+  excludeBookingId?: string,
+  bypassLeadTime = false,
+): Promise<TimeSlot[]> {
   const duration = SERVICE_DURATIONS[serviceId]
   if (!duration) return []
+
+  // Enforce minimum booking lead time (admins can opt out via bypassLeadTime).
+  if (!bypassLeadTime && isBeforeEarliestBookingDate(date)) return []
 
   const durationMinutes = duration * 60
   const dateObj = new Date(date + 'T00:00:00')

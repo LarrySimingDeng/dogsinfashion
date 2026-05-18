@@ -1,119 +1,152 @@
-import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { apiFetch } from '../lib/api'
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface TimeSlot {
-  start: string
-  end: string
+  start: string;
+  end: string;
 }
 
+// Keep this in sync with backend config.MIN_BOOKING_LEAD_DAYS.
+const MIN_BOOKING_LEAD_DAYS = 2;
+
 interface Props {
-  serviceId: string
-  selectedDate: string
-  selectedTime: string
-  onDateChange: (date: string) => void
-  onTimeChange: (time: string) => void
-  excludeBookingId?: string
+  serviceId: string;
+  selectedDate: string;
+  selectedTime: string;
+  onDateChange: (date: string) => void;
+  onTimeChange: (time: string) => void;
+  excludeBookingId?: string;
+  // When true, skip the lead-time restriction — used by the admin
+  // "emergency booking" toggle for same-day / next-day exceptions.
+  bypassLeadTime?: boolean;
 }
 
 function formatDate(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function getDaysInMonth(year: number, month: number): Date[] {
-  const days: Date[] = []
-  const first = new Date(year, month, 1)
-  const last = new Date(year, month + 1, 0)
-  for (let d = first; d <= last; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
-    days.push(new Date(d))
+  const days: Date[] = [];
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  for (
+    let d = first;
+    d <= last;
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
+  ) {
+    days.push(new Date(d));
   }
-  return days
+  return days;
 }
 
-const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDateChange, onTimeChange, excludeBookingId }: Props) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const [viewYear, setViewYear] = useState(today.getFullYear())
-  const [viewMonth, setViewMonth] = useState(today.getMonth())
-  const [slots, setSlots] = useState<TimeSlot[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
+export default function SlotPicker({
+  serviceId,
+  selectedDate,
+  selectedTime,
+  onDateChange,
+  onTimeChange,
+  excludeBookingId,
+  bypassLeadTime = false,
+}: Props) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minBookingDate = new Date(today);
+  if (!bypassLeadTime) {
+    minBookingDate.setDate(minBookingDate.getDate() + MIN_BOOKING_LEAD_DAYS);
+  }
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const days = getDaysInMonth(viewYear, viewMonth)
-  const firstDow = days[0]!.getDay()
+  const days = getDaysInMonth(viewYear, viewMonth);
+  const firstDow = days[0]!.getDay();
 
   // Booking window: end of next month (e.g., today 04/21 → 05/31).
   // Past this date, users can still browse the calendar but can't book — we
   // show a "not yet open" message instead of fetching slots.
-  const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 0)
-  maxDate.setHours(0, 0, 0, 0)
+  const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+  maxDate.setHours(0, 0, 0, 0);
 
   // Browse window: through December of the current calendar year.
-  const browseMaxYear = today.getFullYear()
-  const browseMaxMonth = 11
+  const browseMaxYear = today.getFullYear();
+  const browseMaxMonth = 11;
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
-    else setViewMonth(m => m - 1)
-  }
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
+  };
 
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
-    else setViewMonth(m => m + 1)
-  }
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
+  };
 
-  const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : null
-  const selectedBeyondBookingWindow = !!selectedDateObj && selectedDateObj > maxDate
+  const selectedDateObj = selectedDate
+    ? new Date(selectedDate + "T00:00:00")
+    : null;
+  const selectedBeyondBookingWindow =
+    !!selectedDateObj && selectedDateObj > maxDate;
 
   // Fetch slots when date or service changes
   useEffect(() => {
     if (!selectedDate || !serviceId) {
-      setSlots([])
-      return
+      setSlots([]);
+      return;
     }
 
     // Don't hit the API for dates outside our booking window.
-    const d = new Date(selectedDate + 'T00:00:00')
+    const d = new Date(selectedDate + "T00:00:00");
     if (d > maxDate) {
-      setSlots([])
-      setLoadingSlots(false)
-      return
+      setSlots([]);
+      setLoadingSlots(false);
+      return;
     }
 
-    let cancelled = false
-    const controller = new AbortController()
+    let cancelled = false;
+    const controller = new AbortController();
 
-    setLoadingSlots(true)
-    const url = `/api/availability/slots?date=${selectedDate}&serviceId=${serviceId}${excludeBookingId ? `&excludeBookingId=${excludeBookingId}` : ''}`
-    apiFetch<{ slots: TimeSlot[] }>(
-      url,
-      { signal: controller.signal },
-    )
-      .then(data => { if (!cancelled) setSlots(data.slots) })
-      .catch(() => { if (!cancelled) setSlots([]) })
-      .finally(() => { if (!cancelled) setLoadingSlots(false) })
+    setLoadingSlots(true);
+    const url = `/api/availability/slots?date=${selectedDate}&serviceId=${serviceId}${excludeBookingId ? `&excludeBookingId=${excludeBookingId}` : ""}${bypassLeadTime ? "&bypassLeadTime=true" : ""}`;
+    apiFetch<{ slots: TimeSlot[] }>(url, { signal: controller.signal })
+      .then((data) => {
+        if (!cancelled) setSlots(data.slots);
+      })
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
 
     return () => {
-      cancelled = true
-      controller.abort()
-    }
+      cancelled = true;
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, serviceId, excludeBookingId])
+  }, [selectedDate, serviceId, excludeBookingId, bypassLeadTime]);
 
   const formatTimeDisplay = (time: string) => {
-    const [h, m] = time.split(':').map(Number)
-    const ampm = h! >= 12 ? 'PM' : 'AM'
-    const displayH = h! === 0 ? 12 : h! > 12 ? h! - 12 : h!
-    return `${displayH}:${String(m!).padStart(2, '0')} ${ampm}`
-  }
+    const [h, m] = time.split(":").map(Number);
+    const ampm = h! >= 12 ? "PM" : "AM";
+    const displayH = h! === 0 ? 12 : h! > 12 ? h! - 12 : h!;
+    return `${displayH}:${String(m!).padStart(2, "0")} ${ampm}`;
+  };
 
-  const canGoPrev = viewYear > today.getFullYear() || viewMonth > today.getMonth()
+  const canGoPrev =
+    viewYear > today.getFullYear() || viewMonth > today.getMonth();
   const canGoNext =
-    viewYear * 12 + viewMonth < browseMaxYear * 12 + browseMaxMonth
+    viewYear * 12 + viewMonth < browseMaxYear * 12 + browseMaxMonth;
 
   return (
     <div className="space-y-6">
@@ -129,7 +162,10 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
             <ChevronLeft className="h-5 w-5" />
           </button>
           <span className="font-semibold text-warm-dark">
-            {new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {new Date(viewYear, viewMonth).toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            })}
           </span>
           <button
             type="button"
@@ -142,38 +178,49 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-warm-gray">
-          {WEEKDAY_LABELS.map(d => <div key={d} className="py-1">{d}</div>)}
+          {WEEKDAY_LABELS.map((d) => (
+            <div key={d} className="py-1">
+              {d}
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: firstDow }).map((_, i) => (
             <div key={`pad-${i}`} />
           ))}
-          {days.map(day => {
-            const dateStr = formatDate(day)
-            const isPast = day < today
-            const beyondBooking = day > maxDate
-            const isSelected = dateStr === selectedDate
+          {days.map((day) => {
+            const dateStr = formatDate(day);
+            const isBeforeMin = day < minBookingDate;
+            const beyondBooking = day > maxDate;
+            const isSelected = dateStr === selectedDate;
+            const disabledTitle = bypassLeadTime
+              ? ""
+              : `Please book at least ${MIN_BOOKING_LEAD_DAYS} days in advance`;
 
             return (
               <button
                 key={dateStr}
                 type="button"
-                onClick={() => { onDateChange(dateStr); onTimeChange('') }}
-                disabled={isPast}
+                onClick={() => {
+                  onDateChange(dateStr);
+                  onTimeChange("");
+                }}
+                disabled={isBeforeMin}
+                title={isBeforeMin ? disabledTitle : undefined}
                 className={`rounded-lg py-2 text-sm transition-colors ${
                   isSelected
-                    ? 'bg-secondary font-bold text-white'
-                    : isPast
-                      ? 'text-warm-gray/40'
+                    ? "bg-secondary font-bold text-white"
+                    : isBeforeMin
+                      ? "cursor-not-allowed text-warm-gray/40"
                       : beyondBooking
-                        ? 'font-medium text-warm-gray/60 hover:bg-sky/30'
-                        : 'font-medium text-warm-dark hover:bg-sky/40'
+                        ? "font-medium text-warm-gray/60 hover:bg-sky/30"
+                        : "font-medium text-warm-dark hover:bg-sky/40"
                 }`}
               >
                 {day.getDate()}
               </button>
-            )
+            );
           })}
         </div>
       </div>
@@ -182,8 +229,12 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
       {selectedDate && (
         <div>
           <h4 className="mb-3 text-sm font-semibold text-warm-dark">
-            Available Times for{' '}
-            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            Available Times for{" "}
+            {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
+            })}
           </h4>
 
           {selectedBeyondBookingWindow ? (
@@ -196,18 +247,20 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
               Loading available times...
             </div>
           ) : slots.length === 0 ? (
-            <p className="text-sm text-warm-gray">No available times for this date. Please try another day.</p>
+            <p className="text-sm text-warm-gray">
+              No available times for this date. Please try another day.
+            </p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {slots.map(slot => (
+              {slots.map((slot) => (
                 <button
                   key={slot.start}
                   type="button"
                   onClick={() => onTimeChange(slot.start)}
                   className={`rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                     selectedTime === slot.start
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-sky/30 text-warm-dark hover:bg-sky/60'
+                      ? "bg-secondary font-bold text-white"
+                      : "bg-sky/30 text-warm-dark hover:bg-sky/60"
                   }`}
                 >
                   {formatTimeDisplay(slot.start)}
@@ -218,5 +271,5 @@ export default function SlotPicker({ serviceId, selectedDate, selectedTime, onDa
         </div>
       )}
     </div>
-  )
+  );
 }

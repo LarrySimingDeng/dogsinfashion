@@ -50,6 +50,7 @@ export default function CreateBookingTab() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
+  const [emergencyMode, setEmergencyMode] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const [toasts, setToasts] = useState<ToastData[]>([])
@@ -100,6 +101,7 @@ export default function CreateBookingTab() {
     setPhone('')
     setAddress('')
     setNotes('')
+    setEmergencyMode(false)
   }
 
   async function submit() {
@@ -243,12 +245,34 @@ export default function CreateBookingTab() {
           {serviceId && (
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-warm-dark">Date & time *</label>
+
+              <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-xl border-2 border-blush/60 bg-blush/20 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={emergencyMode}
+                  onChange={e => {
+                    setEmergencyMode(e.target.checked)
+                    setDate('')
+                    setTime('')
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-secondary"
+                />
+                <div className="text-sm">
+                  <div className="font-semibold text-warm-dark">🚨 Emergency booking (紧急预约)</div>
+                  <div className="text-xs text-warm-gray">
+                    Skip the 2-day lead time — use only for last-minute customer requests.
+                    <br />跳过提前 2 天的限制，仅用于老客户临时加急。
+                  </div>
+                </div>
+              </label>
+
               <SlotPicker
                 serviceId={serviceId}
                 selectedDate={date}
                 selectedTime={time}
                 onDateChange={d => { setDate(d); setTime('') }}
                 onTimeChange={setTime}
+                bypassLeadTime={emergencyMode}
               />
             </div>
           )}

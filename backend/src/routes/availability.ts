@@ -8,12 +8,15 @@ import type { AuthRequest } from '../types.js'
 
 export const availabilityRouter = Router()
 
-// Get available time slots for a date + service
+// Get available time slots for a date + service.
+// Public endpoint; an authenticated admin may pass bypassLeadTime=true to
+// surface early slots for emergency bookings. Non-admins get the flag ignored.
 availabilityRouter.get('/slots', async (req, res) => {
   const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     serviceId: z.string().min(1),
     excludeBookingId: z.string().uuid().optional(),
+    bypassLeadTime: z.enum(['true', 'false']).optional(),
   })
 
   const parsed = schema.safeParse(req.query)
@@ -22,7 +25,29 @@ availabilityRouter.get('/slots', async (req, res) => {
     return
   }
 
-  const slots = await getAvailableSlots(parsed.data.date, parsed.data.serviceId, parsed.data.excludeBookingId)
+  let bypassLeadTime = false
+  if (parsed.data.bypassLeadTime === 'true') {
+    const header = req.headers.authorization
+    if (header?.startsWith('Bearer ')) {
+      const token = header.slice(7)
+      const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+      if (user) {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (profile?.role === 'admin') bypassLeadTime = true
+      }
+    }
+  }
+
+  const slots = await getAvailableSlots(
+    parsed.data.date,
+    parsed.data.serviceId,
+    parsed.data.excludeBookingId,
+    bypassLeadTime,
+  )
   res.json({ slots })
 })
 

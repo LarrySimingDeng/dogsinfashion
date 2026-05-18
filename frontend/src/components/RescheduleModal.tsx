@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X, Calendar, Clock } from 'lucide-react'
 import SlotPicker from './SlotPicker'
 import { apiFetch } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 
 interface Booking {
   id: string
@@ -28,6 +29,8 @@ function formatTime(t: string) {
 }
 
 export default function RescheduleModal({ booking, onClose, onRescheduled }: Props) {
+  const { profile } = useAuth()
+  const isAdmin = profile?.role === 'admin'
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -113,6 +116,7 @@ export default function RescheduleModal({ booking, onClose, onRescheduled }: Pro
             onDateChange={d => { setSelectedDate(d); setSelectedTime(''); setError('') }}
             onTimeChange={t => { setSelectedTime(t); setError('') }}
             excludeBookingId={booking.id}
+            bypassLeadTime={isAdmin}
           />
         </div>
 

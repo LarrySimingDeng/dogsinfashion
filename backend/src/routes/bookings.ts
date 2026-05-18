@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/admin.js'
 import { supabaseAdmin } from '../services/supabase.js'
 import { getAvailableSlots } from '../services/slots.js'
+import { isBeforeEarliestBookingDate, getEarliestBookingDate } from '../services/booking-time.js'
 import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '../services/google-calendar.js'
 import {
   sendBookingConfirmation,
@@ -65,6 +66,16 @@ bookingsRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   const duration = SERVICE_DURATIONS[service_id]
   if (!duration) {
     res.status(400).json({ error: 'Invalid service_id' })
+    return
+  }
+
+  // Enforce minimum booking lead time for self-service customers.
+  if (isBeforeEarliestBookingDate(date)) {
+    res.status(400).json({
+      error: `Bookings must be made at least ${config.MIN_BOOKING_LEAD_DAYS} days in advance. Earliest available date: ${getEarliestBookingDate()}.`,
+      code: 'BOOKING_LEAD_TIME_REQUIRED',
+      earliest_date: getEarliestBookingDate(),
+    })
     return
   }
 
@@ -191,6 +202,16 @@ bookingsRouter.post('/with-deposit', requireAuth, async (req: AuthRequest, res) 
     service_id, date, start_time, dog_name, dog_breed, phone, address, notes,
     source_id, idempotency_key, pet_id, save_default_address,
   } = parsed.data
+
+  // Enforce minimum booking lead time BEFORE charging the card.
+  if (isBeforeEarliestBookingDate(date)) {
+    res.status(400).json({
+      error: `Bookings must be made at least ${config.MIN_BOOKING_LEAD_DAYS} days in advance. Earliest available date: ${getEarliestBookingDate()}.`,
+      code: 'BOOKING_LEAD_TIME_REQUIRED',
+      earliest_date: getEarliestBookingDate(),
+    })
+    return
+  }
 
   // Validate pet_id belongs to the caller and is not archived.
   if (pet_id) {
@@ -551,8 +572,10 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
     return
   }
 
+  const isAdmin = req.user!.role === 'admin'
+
   // 24-hour advance notice check (skipped in development, and admins can reschedule anytime)
-  if (config.NODE_ENV !== 'development' && req.user!.role !== 'admin') {
+  if (config.NODE_ENV !== 'development' && !isAdmin) {
     const existingStart = new Date(`${booking.date}T${booking.start_time}`)
     const hoursUntil = (existingStart.getTime() - Date.now()) / (1000 * 60 * 60)
     if (hoursUntil < 24) {
@@ -569,6 +592,16 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
     return
   }
 
+  // Customer-initiated reschedules must respect the same lead time as new bookings.
+  if (!isAdmin && isBeforeEarliestBookingDate(date)) {
+    res.status(400).json({
+      error: `Reschedules must be at least ${config.MIN_BOOKING_LEAD_DAYS} days out. Earliest available date: ${getEarliestBookingDate()}.`,
+      code: 'BOOKING_LEAD_TIME_REQUIRED',
+      earliest_date: getEarliestBookingDate(),
+    })
+    return
+  }
+
   // Calculate end_time
   const duration = SERVICE_DURATIONS[booking.service_id]
   if (!duration) {
@@ -577,8 +610,9 @@ bookingsRouter.patch('/:id/reschedule', requireAuth, async (req: AuthRequest, re
   }
   const end_time = addMinutesToTime(start_time, duration * 60)
 
-  // Verify new slot is available (exclude current booking to avoid self-conflict)
-  const available = await getAvailableSlots(date, booking.service_id, booking.id)
+  // Verify new slot is available (exclude current booking to avoid self-conflict).
+  // Admins can reschedule into the lead-time window.
+  const available = await getAvailableSlots(date, booking.service_id, booking.id, isAdmin)
   const isAvailable = available.some(s => s.start === start_time)
   if (!isAvailable) {
     res.status(409).json({ error: 'This time slot is no longer available' })
@@ -704,7 +738,8 @@ bookingsRouter.post('/admin', requireAuth, requireAdmin, async (req: AuthRequest
 
   const end_time = addMinutesToTime(start_time, duration * 60)
 
-  const available = await getAvailableSlots(date, service_id)
+  // Admin bookings bypass the lead-time check (emergency / same-day route).
+  const available = await getAvailableSlots(date, service_id, undefined, true)
   const isAvailable = available.some(s => s.start === start_time)
   if (!isAvailable) {
     res.status(409).json({ error: 'This time slot is no longer available' })
