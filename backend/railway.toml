@@ -1,6 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+# --include=dev forces devDependencies (typescript, @types/*) to install even
+# when Nixpacks sets NODE_ENV=production. Without this, `tsc` is missing and
+# the build step fails.
+buildCommand = "npm install --include=dev && npm run build"
 
 [deploy]
 startCommand = "node dist/index.js"
