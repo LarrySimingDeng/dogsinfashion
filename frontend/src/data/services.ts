@@ -49,7 +49,7 @@ export const services: ServiceTier[] = [
     type: 'bath',
     size: 'small',
     weightRange: 'Under 20 lbs',
-    duration: 1,
+    duration: 2,
     price: 70,
     description:
       'Our Essential bath for small pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
@@ -63,7 +63,7 @@ export const services: ServiceTier[] = [
     type: 'groom',
     size: 'small',
     weightRange: 'Under 20 lbs',
-    duration: 2,
+    duration: 3,
     price: 110,
     description:
       'The Luxury experience for small pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim.',
@@ -77,7 +77,7 @@ export const services: ServiceTier[] = [
     type: 'bath',
     size: 'medium',
     weightRange: '20–50 lbs',
-    duration: 1,
+    duration: 2,
     price: 85,
     description:
       'Our Essential bath for medium pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
@@ -91,7 +91,7 @@ export const services: ServiceTier[] = [
     type: 'groom',
     size: 'medium',
     weightRange: '20–50 lbs',
-    duration: 2,
+    duration: 3,
     price: 140,
     description:
       'The Luxury experience for medium pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim.',
@@ -105,7 +105,7 @@ export const services: ServiceTier[] = [
     type: 'bath',
     size: 'large',
     weightRange: 'Over 50 lbs',
-    duration: 1,
+    duration: 2,
     price: 110,
     description:
       'Our Essential bath for bigger pups — warm hand bath, premium shampoo & conditioner, blow dry, and brush out.',
@@ -119,7 +119,7 @@ export const services: ServiceTier[] = [
     type: 'groom',
     size: 'large',
     weightRange: 'Over 50 lbs',
-    duration: 2,
+    duration: 4,
     price: 185,
     description:
       'The Luxury experience for bigger pups — bath PLUS full-body haircut, de-shedding, de-matting, and full face, paw & sanitary trim. No rushing, no stress.',

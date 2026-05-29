@@ -1,11 +1,11 @@
 // Service durations in hours
 export const SERVICE_DURATIONS: Record<string, number> = {
-  'bath-small': 1,
-  'bath-medium': 1,
-  'bath-large': 1,
-  'groom-small': 2,
-  'groom-medium': 2,
-  'groom-large': 2,
+  'bath-small': 2,
+  'bath-medium': 2,
+  'bath-large': 2,
+  'groom-small': 3,
+  'groom-medium': 3,
+  'groom-large': 4,
   'groom-xl': 1, // legacy
 }
 
