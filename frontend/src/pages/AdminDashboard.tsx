@@ -178,23 +178,21 @@ function BookingsTab() {
     } else {
       setFilterLoading(true);
     }
-    // Default to showing bookings from today onwards
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-    const queryParams = new URLSearchParams({ from: today });
-    if (statusFilter) {
-      queryParams.set('status', statusFilter);
-    }
-    const params = `?${queryParams.toString()}`;
+    // Show all bookings (past + upcoming). The status filter is the only
+    // optional constraint — there is intentionally no date floor, so past
+    // completed/cancelled bookings (which are always in the past) stay
+    // visible instead of being hidden behind a "from today" default.
+    const params = statusFilter
+      ? `?${new URLSearchParams({ status: statusFilter }).toString()}`
+      : '';
 
     apiFetch<Booking[]>(`/api/bookings${params}`)
       .then((data) =>
         setBookings(
-          data.sort(
+          [...data].sort(
             (a, b) =>
-              a.date.localeCompare(b.date) ||
-              a.start_time.localeCompare(b.start_time),
+              b.date.localeCompare(a.date) ||
+              b.start_time.localeCompare(a.start_time),
           ),
         ),
       )
