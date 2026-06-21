@@ -21,7 +21,7 @@ to the booking wizard, to the admin dashboard the groomer runs the business from
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Frontend-000000?style=flat-square&logo=vercel&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-Backend-0B0D0E?style=flat-square&logo=railway&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)
+![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-orange.svg?style=flat-square)
 
 </div>
 
@@ -288,9 +288,11 @@ More detail in [`docs/INFRASTRUCTURE.md`](./docs/INFRASTRUCTURE.md) and
 
 ## 📄 License
 
-[MIT](./LICENSE) © 2026 Siming Deng — applies to the **source code**.
+[PolyForm Noncommercial 1.0.0](./LICENSE) © 2026 Siming Deng.
 
-> The **"Dogs in Fashion"** name, logo, and the photographs in this repo are **not** covered by the MIT license and remain the property of their respective owners.
+This project is **source-available, not open source**. You're welcome to read it, learn from it, fork it, and run it for **any noncommercial purpose** — personal projects, study, research, or evaluation. **Commercial use is not permitted** — including running it (modified or not) in a business, a paid product, or a competing service. For a commercial license, open an issue or contact the author.
+
+> The **"Dogs in Fashion"** name, logo, and the photographs in this repo are **not** covered by this license and remain the property of their respective owners.
 
 ---
 
