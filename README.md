@@ -21,6 +21,7 @@ to the booking wizard, to the admin dashboard the groomer runs the business from
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Frontend-000000?style=flat-square&logo=vercel&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-Backend-0B0D0E?style=flat-square&logo=railway&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)
 
 </div>
 
@@ -282,6 +283,14 @@ More detail in [`docs/INFRASTRUCTURE.md`](./docs/INFRASTRUCTURE.md) and
 - [x] Square deposit payments (feature-flagged)
 - [ ] Recurring appointments
 - [ ] Google Calendar push webhooks (live two-way edits)
+
+---
+
+## 📄 License
+
+[MIT](./LICENSE) © 2026 Siming Deng — applies to the **source code**.
+
+> The **"Dogs in Fashion"** name, logo, and the photographs in this repo are **not** covered by the MIT license and remain the property of their respective owners.
 
 ---
 
