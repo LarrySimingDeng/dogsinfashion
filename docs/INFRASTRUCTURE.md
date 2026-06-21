@@ -1,113 +1,113 @@
-# Dogs in Fashion — 基础设施与部署指南
+# Dogs in Fashion — Infrastructure & Deployment Guide
 
-> 最后更新：2026-04-09
+> Last updated: 2026-04-09
 
 ---
 
-## 一、系统架构总览
+## 1. System Architecture Overview
 
 ```
-用户浏览器
+User browser
     │
     ▼
 ┌─────────────────────────────┐
-│  Vercel（前端）              │
+│  Vercel (frontend)           │
 │  React + Vite + Tailwind    │
-│  域名: www.dogsinfashion.com │
+│  Domain: www.dogsinfashion.com │
 └─────────────┬───────────────┘
-              │ API 请求
+              │ API requests
               ▼
 ┌──────────────────────────────────────────┐
-│  Railway（后端）                           │
+│  Railway (backend)                         │
 │  Express + TypeScript                     │
-│  域名: dogsinfashion-production.up.railway.app │
+│  Domain: dogsinfashion-production.up.railway.app │
 └──────┬──────────┬───────────┬────────────┘
        │          │           │
        ▼          ▼           ▼
    Supabase   Google Cal   Gmail SMTP
-   (数据库+认证)  (日历同步)   (邮件通知)
+   (database+auth)  (calendar sync)   (email notifications)
 ```
 
-| 组件 | 平台 | URL |
+| Component | Platform | URL |
 |------|------|-----|
-| **前端** | Vercel | https://dogsinfashion-frontend.vercel.app |
-| **后端** | Railway | https://dogsinfashion-production.up.railway.app |
-| **数据库 + 认证** | Supabase | https://supabase.com/dashboard |
-| **代码仓库** | GitHub | https://github.com/arianapan/dogsinfashion |
+| **Frontend** | Vercel | https://dogsinfashion-frontend.vercel.app |
+| **Backend** | Railway | https://dogsinfashion-production.up.railway.app |
+| **Database + Auth** | Supabase | https://supabase.com/dashboard |
+| **Code Repository** | GitHub | https://github.com/arianapan/dogsinfashion |
 | **DNS** | Squarespace | www.dogsinfashion.com |
 
 ---
 
-## 二、项目结构
+## 2. Project Structure
 
-frontend 和 backend 是**完全独立的 npm 项目**（没有 workspace），各自有自己的 `package.json` 和 `package-lock.json`，分别部署到不同平台。
+The frontend and backend are **completely independent npm projects** (no workspace); each has its own `package.json` and `package-lock.json`, and they are deployed to different platforms.
 
 ```
 dogsinfashion/
-├── package.json              # 根目录（仅 concurrently，方便本地同时启动前后端）
-├── .npmrc                    # 指定公共 npm 源
-├── frontend/                 # → 部署到 Vercel
+├── package.json              # Root directory (only concurrently, to conveniently start frontend and backend locally at the same time)
+├── .npmrc                    # Specifies the public npm registry
+├── frontend/                 # → Deployed to Vercel
 │   ├── package.json
-│   ├── .node-version         # 指定 Node 20
+│   ├── .node-version         # Specifies Node 20
 │   ├── vercel.json           # SPA rewrite
 │   └── src/
-└── backend/                  # → 部署到 Railway
+└── backend/                  # → Deployed to Railway
     ├── package.json
     ├── package-lock.json
-    ├── railway.toml           # Railway 构建配置
+    ├── railway.toml           # Railway build configuration
     └── src/
 ```
 
 ---
 
-## 三、自动部署流程
+## 3. Automatic Deployment Flow
 
-**每次 push 到 `main` 分支，Vercel 和 Railway 都会自动重新部署。**
+**Every push to the `main` branch triggers an automatic redeploy on both Vercel and Railway.**
 
 ```
-本地改代码 → git commit → git push origin main
+Edit code locally → git commit → git push origin main
                                   │
                     ┌──────────────┼──────────────┐
                     ▼                             ▼
-              Vercel 自动构建                Railway 自动构建
-              (前端，约30-60秒)              (后端，约1-2分钟)
+              Vercel builds automatically                Railway builds automatically
+              (frontend, ~30-60 seconds)              (backend, ~1-2 minutes)
 ```
 
-不需要任何手动操作，push 就上线。
+No manual steps required; pushing goes live.
 
 ---
 
-## 四、Vercel 前端配置
+## 4. Vercel Frontend Configuration
 
-### 构建设置
+### Build Settings
 
-| 设置项 | 值 |
+| Setting | Value |
 |--------|-----|
 | Framework Preset | Vite |
 | Root Directory | `frontend` |
-| Build Command | `npm run build`（默认） |
-| Install Command | `npm install`（默认） |
-| Node.js Version | 20.x（通过 `frontend/.node-version`） |
+| Build Command | `npm run build` (default) |
+| Install Command | `npm install` (default) |
+| Node.js Version | 20.x (via `frontend/.node-version`) |
 
-### 环境变量（在 Vercel Dashboard → Settings → Environment Variables）
+### Environment Variables (in Vercel Dashboard → Settings → Environment Variables)
 
-| 变量名 | 值 | 说明 |
+| Variable Name | Value | Description |
 |--------|-----|------|
 | `VITE_SUPABASE_URL` | `https://<your-project>.supabase.co` | Supabase URL |
-| `VITE_SUPABASE_ANON_KEY` | `eyJ...` | Supabase 公开 key |
-| `VITE_API_URL` | `https://dogsinfashion-production.up.railway.app` | 后端地址 |
+| `VITE_SUPABASE_ANON_KEY` | `eyJ...` | Supabase public key |
+| `VITE_API_URL` | `https://dogsinfashion-production.up.railway.app` | Backend address |
 
-### 手动重新部署
+### Manual Redeploy
 
-Vercel Dashboard → Deployments → 最近部署 → `...` → Redeploy
+Vercel Dashboard → Deployments → most recent deployment → `...` → Redeploy
 
 ---
 
-## 五、Railway 后端配置
+## 5. Railway Backend Configuration
 
-### 构建设置
+### Build Settings
 
-通过 `backend/railway.toml` 配置：
+Configured via `backend/railway.toml`:
 
 ```toml
 [build]
@@ -118,83 +118,83 @@ buildCommand = "npm install && npm run build"
 startCommand = "node dist/index.js"
 ```
 
-| 设置项 | 值 |
+| Setting | Value |
 |--------|-----|
 | Root Directory | `backend` |
 | Builder | Nixpacks |
 
-### 环境变量（在 Railway Dashboard → Variables）
+### Environment Variables (in Railway Dashboard → Variables)
 
-| 变量名 | 说明 |
+| Variable Name | Description |
 |--------|------|
 | `PORT` | `3001` |
 | `NODE_ENV` | `production` |
 | `FRONTEND_URL` | `https://www.dogsinfashion.com` |
-| `SUPABASE_URL` | Supabase 项目 URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 服务端密钥 |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase server-side secret key |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | GCP Service Account JSON |
-| `DORIS_CALENDAR_ID` | 日历 ID（Gmail 地址） |
-| `SMTP_USER` / `SMTP_PASS` / `DORIS_EMAIL` | 邮件配置 |
+| `DORIS_CALENDAR_ID` | Calendar ID (Gmail address) |
+| `SMTP_USER` / `SMTP_PASS` / `DORIS_EMAIL` | Email configuration |
 
-### 手动重新部署
+### Manual Redeploy
 
 Railway Dashboard → Deployments → Redeploy
 
 ---
 
-## 六、本地开发
+## 6. Local Development
 
 ```bash
-# 首次安装依赖
+# Install dependencies for the first time
 cd frontend && npm install && cd ..
 cd backend && npm install && cd ..
-npm install    # 根目录只装 concurrently
+npm install    # Root directory only installs concurrently
 
-# 启动（同时启动前端 5173 + 后端 3001）
+# Start (start frontend 5173 + backend 3001 at the same time)
 npm run dev
 
-# 分别启动
+# Start separately
 npm run dev:fe
 npm run dev:be
 ```
 
-本地环境变量：
-- `frontend/.env.local` — 前端（`VITE_API_URL` 留空即可，vite proxy 会转发到 3001）
-- `backend/.env` — 后端
+Local environment variables:
+- `frontend/.env.local` — frontend (leave `VITE_API_URL` empty; the vite proxy will forward to 3001)
+- `backend/.env` — backend
 
-这两个文件在 `.gitignore` 中，不会推送到 GitHub。
+These two files are in `.gitignore` and will not be pushed to GitHub.
 
 ---
 
-## 七、日常维护
+## 7. Routine Maintenance
 
-| 操作 | 怎么做 |
+| Operation | How to do it |
 |------|--------|
-| 改代码上线 | `git commit` → `git push` → 自动部署 |
-| 改环境变量 | Railway/Vercel Dashboard → Variables → 修改保存 |
-| 查看后端日志 | Railway Dashboard → 服务 → Deployments → View Logs |
-| 查看预约数据 | Supabase Dashboard → Table Editor → `bookings` |
-| 查看用户 | Supabase Dashboard → Authentication → Users |
-| 回滚部署 | Dashboard → Deployments → 找到之前成功的 → Redeploy |
+| Ship code changes | `git commit` → `git push` → automatic deploy |
+| Change environment variables | Railway/Vercel Dashboard → Variables → edit and save |
+| View backend logs | Railway Dashboard → service → Deployments → View Logs |
+| View booking data | Supabase Dashboard → Table Editor → `bookings` |
+| View users | Supabase Dashboard → Authentication → Users |
+| Roll back a deployment | Dashboard → Deployments → find a previously successful one → Redeploy |
 
 ---
 
-## 八、费用
+## 8. Cost
 
-| 平台 | 费用 |
+| Platform | Cost |
 |------|------|
-| Vercel | 免费（Hobby plan） |
-| Railway | Trial 有 $5 额度，到期后 Hobby plan $5/月 |
-| Supabase | 免费（Free tier） |
-| Squarespace | 域名续费（已有） |
+| Vercel | Free (Hobby plan) |
+| Railway | Trial includes $5 of credit; after it expires, Hobby plan $5/month |
+| Supabase | Free (Free tier) |
+| Squarespace | Domain renewal (already owned) |
 
 ---
 
-## 九、密钥安全
+## 9. Secret Security
 
-- `.env` 文件永远不提交到 GitHub（已在 `.gitignore` 中）
-- 所有密钥只存在 Railway / Vercel 的环境变量中（加密存储）
-- 如果密钥泄露需要轮换：
+- `.env` files are never committed to GitHub (already in `.gitignore`)
+- All secrets exist only in Railway / Vercel environment variables (encrypted storage)
+- If a secret is leaked and needs to be rotated:
   - Gmail App Password → https://myaccount.google.com/apppasswords
   - GCP Service Account Key → Google Cloud Console → IAM → Service Accounts
   - Supabase Key → Supabase Dashboard → Settings → API
