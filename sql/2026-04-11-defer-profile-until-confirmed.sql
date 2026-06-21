@@ -53,9 +53,8 @@ begin
     new.raw_user_meta_data->>'avatar_url',
     case when new.email in (
       'contact@dogsinfashion.com',
-      'dogsinfashionca@gmail.com',
-      '<your-dev-email>',
-      '<admin-email>'
+      'dogsinfashionca@gmail.com'
+      -- add deployment admin emails here
     ) then 'admin' else 'client' end
   )
   on conflict (id) do nothing;

@@ -10,6 +10,24 @@ dist
 frontend/.env.local
 backend/.env
 
+# Secrets, keys & credentials (defensive — these must never be committed)
+*.pem
+*.key
+*.p12
+*.pfx
+*-service-account*.json
+*serviceaccount*.json
+*credentials*.json
+gcp-*.json
+google-*.json
+secrets.json
+.claude/settings.local.json
+
+# Deploy / tooling local state
+.vercel
+.railway
+*.log
+
 # Vite cache
 .vite
 
