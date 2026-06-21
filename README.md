@@ -68,28 +68,9 @@ Calendar, Resend, Twilio, and Square.
 
 ## 🏗️ Architecture
 
-```
-                          ┌──────────────────────────────┐
-                          │           Browser             │
-                          │  www.dogsinfashion.com        │
-                          └───────────────┬──────────────┘
-                                          │
-                  ┌───────────────────────┴────────────────────────┐
-                  │                                                 │
-                  ▼                                                 ▼
-   ┌──────────────────────────────┐                 ┌──────────────────────────────┐
-   │  Frontend · Vercel           │   REST / JSON   │  Backend · Railway           │
-   │  React 18 + Vite + Tailwind  │ ───────────────▶│  Express + TypeScript        │
-   │  React Router · Framer Motion│   Bearer auth   │  Zod · Helmet · CORS         │
-   └──────────────┬───────────────┘                 └───┬─────────┬─────────┬──────┘
-                  │                                      │         │         │
-                  │  Supabase JS (auth + storage)        │         │         │
-                  ▼                                      ▼         ▼         ▼
-   ┌──────────────────────────────┐        ┌───────────────┐ ┌─────────┐ ┌──────────┐
-   │  Supabase                    │        │ Google        │ │ Resend  │ │ Twilio / │
-   │  Postgres · Auth · Storage   │        │ Calendar API  │ │ Email   │ │ Square   │
-   └──────────────────────────────┘        └───────────────┘ └─────────┘ └──────────┘
-```
+<div align="center">
+  <img src="./docs/architecture.svg" alt="Dogs in Fashion system architecture" width="840" />
+</div>
 
 The frontend and backend are **completely separate npm projects** (no workspace) —
 each has its own `package.json` and deploys independently. The root `package.json`

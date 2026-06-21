@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600"
+     font-family="'Nunito','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#7A5A2E" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#B9AE9F"/>
+    </marker>
+  </defs>
+
+  <!-- backdrop card -->
+  <rect x="12" y="12" width="876" height="576" rx="24" fill="#FFFAF3" stroke="#F1E7D7" stroke-width="1.5"/>
+  <text x="40" y="44" font-size="11" font-weight="700" letter-spacing="2" fill="#C3B6A1">SYSTEM ARCHITECTURE</text>
+
+  <!-- ===== connectors (drawn first, under the boxes) ===== -->
+  <g fill="none" stroke="#B9AE9F" stroke-width="1.6">
+    <!-- browser → split bus → frontend + backend -->
+    <path d="M450,112 V160"/>
+    <path d="M211,160 H691"/>
+    <path d="M211,160 V192" marker-end="url(#arrow)"/>
+    <path d="M691,160 V192" marker-end="url(#arrow)"/>
+    <!-- frontend ↔ backend -->
+    <path d="M336,247 H564" marker-end="url(#arrow)"/>
+    <!-- frontend → supabase -->
+    <path d="M194,302 V430" marker-end="url(#arrow)"/>
+    <!-- backend → integrations fan -->
+    <path d="M691,302 V400"/>
+    <path d="M390,400 H786"/>
+    <path d="M390,400 V430" marker-end="url(#arrow)"/>
+    <path d="M522,400 V430" marker-end="url(#arrow)"/>
+    <path d="M654,400 V430" marker-end="url(#arrow)"/>
+    <path d="M786,400 V430" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- edge labels -->
+  <g text-anchor="middle">
+    <rect x="396" y="235" width="108" height="24" rx="12" fill="#FFFFFF" stroke="#E6D8C2"/>
+    <text x="450" y="251" font-size="10.5" font-weight="700" fill="#8A8278">REST · Bearer JWT</text>
+    <rect x="206" y="354" width="98" height="22" rx="11" fill="#FFFFFF" stroke="#E6D8C2"/>
+    <text x="255" y="369" font-size="10" font-weight="700" fill="#8A8278">Supabase JS</text>
+  </g>
+
+  <!-- ===== Browser ===== -->
+  <g text-anchor="middle">
+    <rect x="345" y="46" width="210" height="66" rx="14" fill="#FFFDF8" stroke="#E3D4BE" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="450" y="68" font-size="9.5" font-weight="700" letter-spacing="1.5" fill="#B0A695">CLIENT</text>
+    <text x="450" y="88" font-size="16" font-weight="800" fill="#2D2A26">Browser</text>
+    <text x="450" y="103" font-size="10.5" fill="#7A7570">www.dogsinfashion.com</text>
+  </g>
+
+  <!-- ===== Frontend ===== -->
+  <g text-anchor="middle">
+    <rect x="86" y="192" width="250" height="110" rx="16" fill="#EEF6FC" stroke="#5BA4D9" stroke-width="1.6" filter="url(#shadow)"/>
+    <text x="211" y="217" font-size="10" font-weight="800" letter-spacing="1.5" fill="#3E89C2">VERCEL</text>
+    <text x="211" y="241" font-size="17" font-weight="800" fill="#2D2A26">Frontend</text>
+    <text x="211" y="264" font-size="11.5" fill="#6B6660">React · Vite · Tailwind</text>
+    <text x="211" y="283" font-size="11.5" fill="#6B6660">React Router · Framer Motion</text>
+  </g>
+
+  <!-- ===== Backend ===== -->
+  <g text-anchor="middle">
+    <rect x="566" y="192" width="250" height="110" rx="16" fill="#FDF2E8" stroke="#E8975E" stroke-width="1.6" filter="url(#shadow)"/>
+    <text x="691" y="217" font-size="10" font-weight="800" letter-spacing="1.5" fill="#CB7B3E">RAILWAY</text>
+    <text x="691" y="241" font-size="17" font-weight="800" fill="#2D2A26">Backend</text>
+    <text x="691" y="264" font-size="11.5" fill="#6B6660">Express · TypeScript</text>
+    <text x="691" y="283" font-size="11.5" fill="#6B6660">Zod · Helmet · CORS</text>
+  </g>
+
+  <!-- ===== Supabase ===== -->
+  <g text-anchor="middle">
+    <rect x="86" y="432" width="216" height="110" rx="16" fill="#EEF6EB" stroke="#93BE86" stroke-width="1.6" filter="url(#shadow)"/>
+    <text x="194" y="457" font-size="9" font-weight="800" letter-spacing="1.2" fill="#6FA05F">DATABASE &amp; AUTH</text>
+    <text x="194" y="481" font-size="17" font-weight="800" fill="#2D2A26">Supabase</text>
+    <text x="194" y="504" font-size="11.5" fill="#6B6660">Postgres · Auth</text>
+    <text x="194" y="523" font-size="11.5" fill="#6B6660">Storage · RLS</text>
+  </g>
+
+  <!-- ===== Integration chips ===== -->
+  <g text-anchor="middle">
+    <!-- Google Calendar -->
+    <rect x="330" y="432" width="120" height="110" rx="14" fill="#EAF4FC" stroke="#9FCDEC" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="390" y="478" font-size="13" font-weight="800" fill="#2D2A26">Google</text>
+    <text x="390" y="495" font-size="13" font-weight="800" fill="#2D2A26">Calendar</text>
+    <text x="390" y="514" font-size="10" fill="#7A7570">two-way sync</text>
+
+    <!-- Resend -->
+    <rect x="462" y="432" width="120" height="110" rx="14" fill="#FBF3EA" stroke="#E9C49A" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="522" y="485" font-size="14" font-weight="800" fill="#2D2A26">Resend</text>
+    <text x="522" y="505" font-size="10.5" fill="#7A7570">Email</text>
+
+    <!-- Twilio -->
+    <rect x="594" y="432" width="120" height="110" rx="14" fill="#FCEFF1" stroke="#E6B6BE" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="654" y="485" font-size="14" font-weight="800" fill="#2D2A26">Twilio</text>
+    <text x="654" y="505" font-size="10.5" fill="#7A7570">SMS</text>
+
+    <!-- Square -->
+    <rect x="726" y="432" width="120" height="110" rx="14" fill="#FCF7E4" stroke="#E4CE7E" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="786" y="485" font-size="14" font-weight="800" fill="#2D2A26">Square</text>
+    <text x="786" y="505" font-size="10.5" fill="#7A7570">Deposits · opt</text>
+  </g>
+</svg>
